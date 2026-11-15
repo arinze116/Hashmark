@@ -11,7 +11,7 @@ Hashmark independently checks Fe 26.6.0's built-in SHA-256 and Ethereum Keccak-2
 | ![GNOME Terminal showing Hashmark passing 64 of 64 backend-vector checks, two of two target suites and 32 of 32 differential comparisons](docs/assets/hashmark-terminal-summary.png) | ![Hashmark offline report showing PASS, 64 executed results, native and EVM target suites, and 32 differential comparisons](docs/assets/hashmark-report-overview.png) |
 | Actual terminal capture from the passing integration job. | Actual self-contained HTML report downloaded from the same CI run. |
 
-**Status:** Fe 26.6.0 · SHA-256 + Ethereum Keccak-256 · native + EVM · Python 3.15.2 oracle · [CI passing](https://github.com/arinze116/Hashmark/actions/runs/43756110344) · MIT
+**Status:** Fe 26.6.0 · SHA-256 + Ethereum Keccak-256 · native + EVM · Python 3.15.2 oracle · [CI passing](https://github.com/arinze116/Hashmark/actions/runs/43756807882) · MIT
 
 **Run:** `python -m hashmark run --all --backend all --format all --output-dir reports/local`
 
@@ -54,7 +54,7 @@ Verified by the pinned x86-64 workflow and local checks:
 
 | Check | Result | Evidence |
 | --- | ---: | --- |
-| Full backend/vector run | 64/64 pass | [CI integration run](https://github.com/arinze116/Hashmark/actions/runs/43756110344) |
+| Full backend/vector run | 64/64 pass | [CI integration run](https://github.com/arinze116/Hashmark/actions/runs/43756807882) |
 | Fe target suites | 2/2 pass | ten shared tests on Sonatina/EVM and native |
 | Native differential comparisons | 32/32 pass | committed `HASHMARK/1` protocol log |
 | Python tests | 105 pass | CPython 3.15.2 CI job |

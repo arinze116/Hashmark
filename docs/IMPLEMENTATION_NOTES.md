@@ -25,7 +25,7 @@ Status labels in this document are factual confidence labels, not test outcomes.
 - **Verified:** the installed `uv 0.12.6` catalogue did not offer CPython 3.15.2 for Linux AArch64, so the exact interpreter is built from the official CPython source tarball into a project-specific user directory.
 - **Verified:** PyCryptodome 4.4.0 installs and passes SHA-256/Keccak oracle tests under the project-local CPython 3.15.2 interpreter.
 - **Verified:** 105 Python tests pass. Coverage.py 7.17.3 cannot run on the project-local interpreter because that user-built Python lacks the optional `_sqlite3` module; the same suite measured 92% line coverage under the host Python 3.12.3 with the Python-version preflight patched only for measurement.
-- **Verified:** GitHub Actions run `43756110344` measured the same 92% coverage under exact CPython 3.15.2 and passed all Fe, Python, integration and dependency-consistency jobs at source revision `0e6aaa6a541890b76769c3dba61ff153861f0803`.
+- **Verified:** GitHub Actions run `43756807882` measured the same 92% coverage under exact CPython 3.15.2 and passed all Fe, Python, integration and dependency-consistency jobs at source revision `fb45a89f64cbd237e92165029a5aafd2f0f88c0e`.
 - **Verified:** the CI integration run produced 64/64 passing backend/vector results, 2/2 target suites and 32/32 native differential comparisons. Its deterministic evidence is committed under `reports/demo/`.
 - **Verified:** generated report JSON validates against both Hashmark's fail-closed internal validator and the published Draft 2020-12 JSON Schema.
 - **Verified:** desktop/tablet/mobile QA at 1440, 1024, 768, 375, and 320 pixels shows no page-level horizontal overflow. Target tables retain local scrolling.

@@ -788,8 +788,8 @@
 
 ## Provenance
 
-- Source revision: `0e6aaa6a541890b76769c3dba61ff153861f0803`
-- Source tree SHA-256: `836b4118f973ad6c170f815b00f1fb37a1d89331ef58c7e67e41780abfc5c363`
+- Source revision: `fb45a89f64cbd237e92165029a5aafd2f0f88c0e`
+- Source tree SHA-256: `c119a58f8fd3319d70fd6b7fe70ba08d643882291fc446d94fbf51c6f0baeadf`
 - Fixture manifest SHA-256: `ca87eb6406a88008c7224cf14ca8f1ba5a522b371c7fcd9ecb59a8d7eef00804`
 - Fe: `fe 26.6.0 (5b3f96a)`
 - Python: `3.15.2`
