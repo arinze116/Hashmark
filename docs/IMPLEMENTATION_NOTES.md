@@ -42,7 +42,7 @@ Status labels in this document are factual confidence labels, not test outcomes.
 
 - `actions/checkout` v6.0.1 commit `8e8c483db84b4bee98b60c0593521ed34d9990e8`.
 - `actions/setup-python` v6.1.0 commit `83679a892e2d95755f2dac6acb0bfd1e9ac5d548`.
-- `actions/upload-artifact` v5.0.0 commit `330a01c490aca151604b8cf639adc76d48f6c5d548`.
+- `actions/upload-artifact` v5.0.0 commit `330a01c490aca151604b8cf639adc76d48f6c5d4`.
 - Feup script is fetched from the Fe `v26.6.0` tag and checked against SHA-256 `b2dffd2d9d5b1a07d18e9321f57ab08442cc50df4a6004ee2fb538963812ee78` before execution.
 
 ## Source ledger
