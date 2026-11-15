@@ -1,0 +1,8 @@
+"""Stable process exit codes for the Hashmark CLI."""
+
+EXIT_SUCCESS = 0
+EXIT_CONFORMANCE = 1
+EXIT_ARGUMENT = 2
+EXIT_TOOLCHAIN = 3
+EXIT_EXECUTION = 4
+EXIT_REPORT = 5

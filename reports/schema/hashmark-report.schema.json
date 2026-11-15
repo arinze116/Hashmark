@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/arinze116/Hashmark/raw/main/reports/schema/hashmark-report.schema.json",
+  "title": "Hashmark evidence report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "project",
+    "toolchain",
+    "source_revision",
+    "source_tree_sha256",
+    "fixture_manifest_sha256",
+    "run_configuration",
+    "summary",
+    "results",
+    "target_runs",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "project": {"$ref": "#/$defs/project"},
+    "toolchain": {"$ref": "#/$defs/toolchain"},
+    "source_revision": {"type": "string", "minLength": 1},
+    "source_tree_sha256": {"$ref": "#/$defs/digest"},
+    "fixture_manifest_sha256": {"$ref": "#/$defs/digest"},
+    "run_configuration": {"$ref": "#/$defs/runConfiguration"},
+    "summary": {"$ref": "#/$defs/summary"},
+    "results": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/result"}},
+    "target_runs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/target"}},
+    "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1}
+      }
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fe", "python", "pycryptodome"],
+      "properties": {
+        "fe": {"type": "string", "minLength": 1},
+        "python": {"type": "string", "minLength": 1},
+        "pycryptodome": {"type": "string", "minLength": 1}
+      }
+    },
+    "runConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithms", "backends", "selector"],
+      "properties": {
+        "algorithms": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["sha256", "keccak256"]}
+        },
+        "backends": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["native", "evm"]}
+        },
+        "selector": {"type": "string", "minLength": 1}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "passed", "failed", "skipped"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "passed": {"type": "integer", "minimum": 0},
+        "failed": {"type": "integer", "minimum": 0},
+        "skipped": {"type": "integer", "minimum": 0}
+      }
+    },
+    "ratio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "passed"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "passed": {"type": "integer", "minimum": 0}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "by_algorithm",
+        "by_backend",
+        "differential_comparisons",
+        "failed",
+        "passed",
+        "skipped",
+        "status",
+        "target_suites",
+        "total"
+      ],
+      "properties": {
+        "by_algorithm": {"type": "object", "additionalProperties": {"$ref": "#/$defs/counts"}},
+        "by_backend": {"type": "object", "additionalProperties": {"$ref": "#/$defs/counts"}},
+        "differential_comparisons": {"$ref": "#/$defs/ratio"},
+        "failed": {"type": "integer", "minimum": 0},
+        "passed": {"type": "integer", "minimum": 0},
+        "skipped": {"type": "integer", "minimum": 0},
+        "status": {"enum": ["PASS", "FAIL"]},
+        "target_suites": {"$ref": "#/$defs/ratio"},
+        "total": {"type": "integer", "minimum": 1}
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "algorithm",
+        "category",
+        "input_length_bytes",
+        "input_sha256",
+        "expected_digest",
+        "fe_digest",
+        "oracle_digest",
+        "backend",
+        "status",
+        "source_name",
+        "source_url",
+        "source_document",
+        "source_case_id",
+        "notes",
+        "diagnostic",
+        "evidence_basis"
+      ],
+      "properties": {
+        "vector_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"},
+        "algorithm": {"enum": ["sha256", "keccak256"]},
+        "category": {"enum": ["known_answer", "boundary", "streaming", "long_message"]},
+        "input_length_bytes": {"type": "integer", "minimum": 0, "maximum": 1048576},
+        "input_sha256": {"$ref": "#/$defs/digest"},
+        "expected_digest": {"$ref": "#/$defs/digest"},
+        "fe_digest": {"oneOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+        "oracle_digest": {"$ref": "#/$defs/digest"},
+        "backend": {"enum": ["native", "evm"]},
+        "status": {"enum": ["PASS", "FAIL", "SKIPPED"]},
+        "source_name": {"type": "string", "minLength": 1},
+        "source_url": {"type": "string", "format": "uri", "pattern": "^https://"},
+        "source_document": {"type": "string", "minLength": 1},
+        "source_case_id": {"type": "string", "minLength": 1},
+        "notes": {"type": ["string", "null"]},
+        "diagnostic": {"type": ["string", "null"]},
+        "evidence_basis": {"enum": ["native_digest", "evm_test_status", "unavailable"]}
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["backend", "status", "command", "test_identifiers", "diagnostic"],
+      "properties": {
+        "backend": {"enum": ["native", "evm"]},
+        "status": {"enum": ["PASS", "FAIL", "NOT_RUN", "UNAVAILABLE"]},
+        "command": {"type": "array", "items": {"type": "string"}},
+        "test_identifiers": {"type": "array", "items": {"type": "string"}},
+        "diagnostic": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

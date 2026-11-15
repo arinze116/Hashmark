@@ -1,0 +1,107 @@
+{
+  "fixture_manifest_sha256": "9321ceae1d02799403e24a4aafc61a298e67bf8b6bd63838dd5a4326e772d2f3",
+  "limitations": [
+    "Informal conformance testing only; this is not formal NIST CAVP validation or certification.",
+    "Passing vectors are not a security audit, proof of cryptographic security, or exhaustive testing.",
+    "Fe 26.6.0 is not production-ready; Hashmark records observed behavior for this pinned compiler.",
+    "The Fe EVM test runner exposes test status and identifiers, not per-vector runtime digest output."
+  ],
+  "project": {
+    "name": "Hashmark",
+    "version": "1.0.0"
+  },
+  "results": [
+    {
+      "algorithm": "sha256",
+      "backend": "evm",
+      "category": "known_answer",
+      "diagnostic": "expected digest does not match the independent oracle",
+      "evidence_basis": "evm_test_status",
+      "expected_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+      "fe_digest": null,
+      "input_length_bytes": 3,
+      "input_sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      "notes": "Canonical SHA-256 example.",
+      "oracle_digest": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      "source_case_id": "message abc",
+      "source_document": "FIPS 180-4 SHA-256 example",
+      "source_name": "NIST FIPS 180-4",
+      "source_url": "https://doi.org/10.6028/NIST.FIPS.180-4",
+      "status": "FAIL",
+      "vector_id": "sha256-abc"
+    }
+  ],
+  "run_configuration": {
+    "algorithms": [
+      "sha256"
+    ],
+    "backends": [
+      "evm"
+    ],
+    "selector": "sha256-abc"
+  },
+  "schema_version": 1,
+  "source_revision": "UNCOMMITTED",
+  "source_tree_sha256": "72910a9b175fdd7f5241707468f0b0ec117fa576b0fddb2cf7e96ec7a3816039",
+  "summary": {
+    "by_algorithm": {
+      "sha256": {
+        "failed": 1,
+        "passed": 0,
+        "skipped": 0,
+        "total": 1
+      }
+    },
+    "by_backend": {
+      "evm": {
+        "failed": 1,
+        "passed": 0,
+        "skipped": 0,
+        "total": 1
+      }
+    },
+    "differential_comparisons": {
+      "passed": 0,
+      "total": 0
+    },
+    "failed": 1,
+    "passed": 0,
+    "skipped": 0,
+    "status": "FAIL",
+    "target_suites": {
+      "passed": 1,
+      "total": 1
+    },
+    "total": 1
+  },
+  "target_runs": [
+    {
+      "backend": "evm",
+      "command": [
+        "fe",
+        "test",
+        "--backend",
+        "sonatina"
+      ],
+      "diagnostic": null,
+      "status": "PASS",
+      "test_identifiers": [
+        "keccak256_generated_vectors",
+        "keccak256_known_answers",
+        "keccak256_streaming_matches_one_shot",
+        "keccak256_two_part_splits_match_one_shot",
+        "keccak256_uneven_partition_matches_one_shot",
+        "sha256_generated_vectors",
+        "sha256_known_answers",
+        "sha256_streaming_matches_one_shot",
+        "sha256_two_part_splits_match_one_shot",
+        "sha256_uneven_partition_matches_one_shot"
+      ]
+    }
+  ],
+  "toolchain": {
+    "fe": "fe 26.6.0 (5b3f96a)",
+    "pycryptodome": "4.4.0",
+    "python": "3.15.2"
+  }
+}

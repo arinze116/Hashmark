@@ -1,0 +1,12 @@
+use core::ptr::MemBuffer
+
+/// Return the deterministic Hashmark boundary input of `len` bytes.
+pub fn deterministic_input(_ len: usize) -> MemBuffer {
+    var input = MemBuffer::new(len)
+    var index: usize = 0
+    while index < len {
+        input[index] = (index * 131 + 17).downcast_truncate()
+        index += 1
+    }
+    input
+}

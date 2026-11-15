@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  FE_VERSION: v26.6.0
+  FE_VERSION_OUTPUT: fe 26.6.0 (5b3f96a)
+  PYTHON_VERSION: 3.15.2
+  FEUP_SHA256: b2dffd2d9d5b1a07d18e9321f57ab08442cc50df4a6004ee2fb538963812ee78
+
+jobs:
+  fe:
+    name: Fe native and EVM
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Install pinned Fe compiler
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://raw.githubusercontent.com/argotorg/fe/${FE_VERSION}/feup/feup.sh" -o "${RUNNER_TEMP}/feup.sh"
+          echo "${FEUP_SHA256}  ${RUNNER_TEMP}/feup.sh" | sha256sum --check --strict
+          bash "${RUNNER_TEMP}/feup.sh" --version "${FE_VERSION}" --no-modify-path
+          echo "${HOME}/.fe/bin" >> "${GITHUB_PATH}"
+
+      - name: Assert toolchain and host
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "x86_64"
+          test "$(fe --version)" = "${FE_VERSION_OUTPUT}"
+
+      - name: Check formatting and types
+        run: |
+          fe fmt --check
+          fe check
+
+      - name: Test EVM backend
+        run: fe test --backend sonatina
+
+      - name: Test native backend
+        run: fe test --backend native
+
+      - name: Build native runner
+        run: fe build --backend native --emit executable --out-dir out/ci-native
+
+  python:
+    name: Python tests and coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements-dev.txt -e .
+
+      - name: Assert Python toolchain
+        run: |
+          python -c "import platform; assert platform.python_version() == '3.15.2', platform.python_version()"
+          python -m hashmark version || test "$?" = 3
+          python -c "from hashmark.oracle import pycryptodome_version; assert pycryptodome_version() == '4.4.0'"
+
+      - name: Run unit tests with coverage
+        run: |
+          python -m coverage run -m unittest discover -s tests -v
+          python -m coverage report
+
+      - name: Validate committed vectors
+        run: python -m hashmark validate-vectors
+
+  integration:
+    name: Clean full run and deterministic evidence
+    needs: [fe, python]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements-dev.txt -e .
+
+      - name: Install pinned Fe compiler
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://raw.githubusercontent.com/argotorg/fe/${FE_VERSION}/feup/feup.sh" -o "${RUNNER_TEMP}/feup.sh"
+          echo "${FEUP_SHA256}  ${RUNNER_TEMP}/feup.sh" | sha256sum --check --strict
+          bash "${RUNNER_TEMP}/feup.sh" --version "${FE_VERSION}" --no-modify-path
+          echo "${HOME}/.fe/bin" >> "${GITHUB_PATH}"
+
+      - name: Generate evidence twice
+        run: |
+          python -m hashmark run --all --backend all --format all --output-dir reports/ci-first
+          python -m hashmark run --all --backend all --format all --output-dir reports/ci-second
+
+      - name: Validate schema and determinism
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -c "import json; from pathlib import Path; from hashmark.schema import validate_report_data; validate_report_data(json.loads(Path('reports/ci-first/hashmark-report.json').read_text()))"
+          python scripts/validate_report_schema.py reports/ci-first/hashmark-report.json
+          for name in hashmark-report.json hashmark-report.md hashmark-report.sha256 index.html native-protocol.log; do
+            cmp "reports/ci-first/${name}" "reports/ci-second/${name}"
+          done
+
+      - name: Upload evidence report
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d548 # v5.0.0
+        with:
+          name: hashmark-evidence-${{ github.sha }}
+          path: reports/ci-first/
+          if-no-files-found: error
+          retention-days: 30
+
+  security:
+    name: Dependency consistency
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Verify installed dependency graph
+        run: |
+          python -m pip install -r requirements.txt -e .
+          python -m pip check

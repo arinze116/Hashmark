@@ -1,0 +1,603 @@
+#![cfg(target = "native")]
+
+use core::text::hex
+use std::env::Args
+use std::io::{Stderr, Stdout}
+
+use super::{deterministic_input, keccak256, sha256}
+
+fn emit<const I: usize, const A: usize>(
+    _ vector_id: String<I>,
+    _ algorithm: String<A>,
+    _ input_length: usize,
+    _ digest: u256,
+    _ expected: u256,
+) -> bool
+uses (out: mut Stdout)
+{
+    let passed = digest == expected
+    println!(
+        "HASHMARK/1\t",
+        vector_id,
+        "\t",
+        algorithm,
+        "\t",
+        input_length,
+        "\t",
+        hex(digest, 32),
+        "\tnative\t",
+        if passed { "pass" } else { "fail" },
+    )
+    passed
+}
+
+pub fn run() -> i32 uses (args: Args, out: mut Stdout, err: mut Stderr) {
+    let argument_count = args.count()
+    let select_all = argument_count == 1 || (argument_count == 2 && args.get(1) == "--all")
+    let select_algorithm = argument_count == 3 && args.get(1) == "--algorithm"
+    let select_vector = argument_count == 3 && args.get(1) == "--vector"
+    if !(select_all || select_algorithm || select_vector) {
+        eprintln!(
+            "usage: hashmark [--all | --algorithm sha256|keccak256 | --vector id]",
+        )
+        return 2
+    }
+    if select_algorithm && !(args.get(2) == "sha256" || args.get(2) == "keccak256") {
+        eprintln!("unsupported algorithm")
+        return 2
+    }
+    var known_vector = false
+    if select_vector && args.get(2) == "keccak256-abc" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "keccak256-boundary-1" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "keccak256-boundary-135" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "keccak256-boundary-136" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "keccak256-boundary-137" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "keccak256-boundary-2" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "keccak256-boundary-271" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "keccak256-boundary-272" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "keccak256-boundary-273" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "keccak256-boundary-3" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "keccak256-empty" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "keccak256-long-1k" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "keccak256-long-64k" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-abc" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-boundary-1" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-boundary-119" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-boundary-120" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-boundary-127" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-boundary-128" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-boundary-129" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-boundary-2" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-boundary-3" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-boundary-55" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-boundary-56" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-boundary-57" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-boundary-63" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-boundary-64" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-boundary-65" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-empty" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-long-1k" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-long-64k" {
+        known_vector = true
+    }
+    if select_vector && args.get(2) == "sha256-nist-short-d3" {
+        known_vector = true
+    }
+    if select_vector && !known_vector {
+        eprintln!("unknown vector id")
+        return 2
+    }
+    var total: usize = 0
+    var passed: usize = 0
+    if select_all
+        || (select_algorithm && args.get(2) == "keccak256")
+        || (select_vector && args.get(2) == "keccak256-abc") {
+        total += 1
+        if emit(
+            "keccak256-abc",
+            "keccak256",
+            3,
+            keccak256::digest_word([97 as u8, 98, 99]),
+            0x4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "keccak256")
+        || (select_vector && args.get(2) == "keccak256-boundary-1") {
+        total += 1
+        if emit(
+            "keccak256-boundary-1",
+            "keccak256",
+            1,
+            keccak256::digest_word(deterministic_input(1).span()),
+            0x0552ab8dc52e1cf9328ddb97e0966b9c88de9cca97f48b0110d7800982596158,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "keccak256")
+        || (select_vector && args.get(2) == "keccak256-boundary-135") {
+        total += 1
+        if emit(
+            "keccak256-boundary-135",
+            "keccak256",
+            135,
+            keccak256::digest_word(deterministic_input(135).span()),
+            0x37842a4806a4a3d4eaa4a1789235a5b66b5d1901bf8388cfc1a599b2286cb56f,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "keccak256")
+        || (select_vector && args.get(2) == "keccak256-boundary-136") {
+        total += 1
+        if emit(
+            "keccak256-boundary-136",
+            "keccak256",
+            136,
+            keccak256::digest_word(deterministic_input(136).span()),
+            0x317e60199b8b3851917e74926b7690d755cd27cd50c4a5abb3075fe252b6de55,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "keccak256")
+        || (select_vector && args.get(2) == "keccak256-boundary-137") {
+        total += 1
+        if emit(
+            "keccak256-boundary-137",
+            "keccak256",
+            137,
+            keccak256::digest_word(deterministic_input(137).span()),
+            0x4f17b9c92046ceb9694fbe867db52a6d0672ce2c2c720803be77258c62107c54,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "keccak256")
+        || (select_vector && args.get(2) == "keccak256-boundary-2") {
+        total += 1
+        if emit(
+            "keccak256-boundary-2",
+            "keccak256",
+            2,
+            keccak256::digest_word(deterministic_input(2).span()),
+            0x4010befd47b38289f2a4da8fd1ad3af0bc5fe286d9c9616d99534a04bac339ed,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "keccak256")
+        || (select_vector && args.get(2) == "keccak256-boundary-271") {
+        total += 1
+        if emit(
+            "keccak256-boundary-271",
+            "keccak256",
+            271,
+            keccak256::digest_word(deterministic_input(271).span()),
+            0xcdf35022e028099c49c1373cd7375ef6fc6bb9d927250f1b1f739190dbd30c6f,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "keccak256")
+        || (select_vector && args.get(2) == "keccak256-boundary-272") {
+        total += 1
+        if emit(
+            "keccak256-boundary-272",
+            "keccak256",
+            272,
+            keccak256::digest_word(deterministic_input(272).span()),
+            0x2fe8d923d96d25f4f3edf77eadcae30e130c0bbe5cfb7771c74306c5dc2bd7d3,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "keccak256")
+        || (select_vector && args.get(2) == "keccak256-boundary-273") {
+        total += 1
+        if emit(
+            "keccak256-boundary-273",
+            "keccak256",
+            273,
+            keccak256::digest_word(deterministic_input(273).span()),
+            0x327d102dcc70d465cd1ae7423e322c01e0efa34888f7e19311a4f4425bf38d6d,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "keccak256")
+        || (select_vector && args.get(2) == "keccak256-boundary-3") {
+        total += 1
+        if emit(
+            "keccak256-boundary-3",
+            "keccak256",
+            3,
+            keccak256::digest_word(deterministic_input(3).span()),
+            0xe239c45a6a249ef578a6e4c732fcf24d94d453c6b84f9db4f3d1decd03dcd6ab,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "keccak256")
+        || (select_vector && args.get(2) == "keccak256-empty") {
+        total += 1
+        if emit(
+            "keccak256-empty",
+            "keccak256",
+            0,
+            keccak256::digest_word([0 as u8; 0]),
+            0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "keccak256")
+        || (select_vector && args.get(2) == "keccak256-long-1k") {
+        total += 1
+        if emit(
+            "keccak256-long-1k",
+            "keccak256",
+            1024,
+            keccak256::digest_word(deterministic_input(1024).span()),
+            0x2f5106d246674d98b6ae93d84eb96a4cae92dd057c3d3fcb7d30b060db675c87,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "keccak256")
+        || (select_vector && args.get(2) == "keccak256-long-64k") {
+        total += 1
+        if emit(
+            "keccak256-long-64k",
+            "keccak256",
+            65536,
+            keccak256::digest_word(deterministic_input(65536).span()),
+            0xc8d035295f3de4cd6eb96b194331b5a9b49edad223dc82c51bd5e8130163254b,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-abc") {
+        total += 1
+        if emit(
+            "sha256-abc",
+            "sha256",
+            3,
+            sha256::digest_word([97 as u8, 98, 99]),
+            0xba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-boundary-1") {
+        total += 1
+        if emit(
+            "sha256-boundary-1",
+            "sha256",
+            1,
+            sha256::digest_word(deterministic_input(1).span()),
+            0x4a64a107f0cb32536e5bce6c98c393db21cca7f4ea187ba8c4dca8b51d4ea80a,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-boundary-119") {
+        total += 1
+        if emit(
+            "sha256-boundary-119",
+            "sha256",
+            119,
+            sha256::digest_word(deterministic_input(119).span()),
+            0x3244509f8746f6fb511ca8a72a292a4d7d12e456cce283c03f169dbbcb0d512e,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-boundary-120") {
+        total += 1
+        if emit(
+            "sha256-boundary-120",
+            "sha256",
+            120,
+            sha256::digest_word(deterministic_input(120).span()),
+            0xc5236e50172da3b69c903dcd3b3bb8ce855182f79364d1b59ed36367aa25e468,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-boundary-127") {
+        total += 1
+        if emit(
+            "sha256-boundary-127",
+            "sha256",
+            127,
+            sha256::digest_word(deterministic_input(127).span()),
+            0xb4f5398bf618d741f2ab0f6e2fcde06f4949c20d476b5f6e1d4bf8618bc8973a,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-boundary-128") {
+        total += 1
+        if emit(
+            "sha256-boundary-128",
+            "sha256",
+            128,
+            sha256::digest_word(deterministic_input(128).span()),
+            0xed045c7c319e0c9286e1dea21c80bfd4a08eca43e02e13ee8a7a2c8b4b2baec9,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-boundary-129") {
+        total += 1
+        if emit(
+            "sha256-boundary-129",
+            "sha256",
+            129,
+            sha256::digest_word(deterministic_input(129).span()),
+            0xd6f2fca0407b3f98c9ce29ae92a6cdf489506450fdbb29172f6b18987bc685db,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-boundary-2") {
+        total += 1
+        if emit(
+            "sha256-boundary-2",
+            "sha256",
+            2,
+            sha256::digest_word(deterministic_input(2).span()),
+            0xb27fc04e05a940672b77fb0d1aaf6a1f6e3675603da78e6791a66b6523c46fd4,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-boundary-3") {
+        total += 1
+        if emit(
+            "sha256-boundary-3",
+            "sha256",
+            3,
+            sha256::digest_word(deterministic_input(3).span()),
+            0xabf0f7ab4223b86bbafb06e42d0caf0e889d27619b946d440a128bb405b7c5a3,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-boundary-55") {
+        total += 1
+        if emit(
+            "sha256-boundary-55",
+            "sha256",
+            55,
+            sha256::digest_word(deterministic_input(55).span()),
+            0x59aaae80b8e7958f5757b4ac9274f1fd57ec0dc7aa8349319102316781b92006,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-boundary-56") {
+        total += 1
+        if emit(
+            "sha256-boundary-56",
+            "sha256",
+            56,
+            sha256::digest_word(deterministic_input(56).span()),
+            0xdca902d31487ffab357ce36cc5abc6947fbb69127ec04c468ba5687268c4bf7c,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-boundary-57") {
+        total += 1
+        if emit(
+            "sha256-boundary-57",
+            "sha256",
+            57,
+            sha256::digest_word(deterministic_input(57).span()),
+            0xca0042f1f8b6a02ba5a30af121a9b69daa34b07bb22b2b320c05abe21df875a0,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-boundary-63") {
+        total += 1
+        if emit(
+            "sha256-boundary-63",
+            "sha256",
+            63,
+            sha256::digest_word(deterministic_input(63).span()),
+            0xb8e655e9e7ad413b96f0a371eb1d6db71dcca27f4eee35892517cbe4bfaa6f9a,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-boundary-64") {
+        total += 1
+        if emit(
+            "sha256-boundary-64",
+            "sha256",
+            64,
+            sha256::digest_word(deterministic_input(64).span()),
+            0xe5146be62accc56709594cb45c651b361df94f622cbb09b91ea3ca7a2060bd53,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-boundary-65") {
+        total += 1
+        if emit(
+            "sha256-boundary-65",
+            "sha256",
+            65,
+            sha256::digest_word(deterministic_input(65).span()),
+            0x4b6c6774f0cbcd776a90e187b9494e04ca880c0afe3ea1c5cad51c8bbcb41f74,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-empty") {
+        total += 1
+        if emit(
+            "sha256-empty",
+            "sha256",
+            0,
+            sha256::digest_word([0 as u8; 0]),
+            0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-long-1k") {
+        total += 1
+        if emit(
+            "sha256-long-1k",
+            "sha256",
+            1024,
+            sha256::digest_word(deterministic_input(1024).span()),
+            0x575383deff0775797e1ff4c82da069141937c843a81cbe50959a96bcfa88140e,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-long-64k") {
+        total += 1
+        if emit(
+            "sha256-long-64k",
+            "sha256",
+            65536,
+            sha256::digest_word(deterministic_input(65536).span()),
+            0xd8f32a3b4c195f65444e342b0c61bdaf114802e84ab7821a1f88e3f66ea15100,
+        ) {
+            passed += 1
+        }
+    }
+    if select_all
+        || (select_algorithm && args.get(2) == "sha256")
+        || (select_vector && args.get(2) == "sha256-nist-short-d3") {
+        total += 1
+        if emit(
+            "sha256-nist-short-d3",
+            "sha256",
+            1,
+            sha256::digest_word([0xd3 as u8]),
+            0x28969cdfa74a12c82f3bad960b0b000aca2ac329deea5c2328ebc6f2ba9802c1,
+        ) {
+            passed += 1
+        }
+    }
+    let failed = total - passed
+    println!("HASHMARK/1\tSUMMARY\t", total, "\t", passed, "\t", failed)
+    if failed == 0 { 0 } else { 1 }
+}

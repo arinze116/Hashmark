@@ -1,0 +1,9 @@
+[run]
+source = hashmark
+
+[report]
+fail_under = 90
+omit =
+    hashmark/__main__.py
+show_missing = true
+skip_covered = false

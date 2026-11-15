@@ -1,0 +1,136 @@
+use core::hash::{Keccak256, Sha256}
+use ingot::{deterministic_input, generated_vectors, keccak256, sha256}
+
+#[test]
+fn sha256_known_answers() {
+    assert!(
+        sha256::digest_word([0 as u8; 0]) == generated_vectors::SHA256_EMPTY,
+    )
+    assert!(
+        sha256::digest_word([97 as u8, 98, 99]) == generated_vectors::SHA256_ABC,
+    )
+    assert!(
+        sha256::digest_word([0xd3 as u8]) == generated_vectors::SHA256_NIST_SHORT_D3,
+    )
+}
+
+#[test]
+fn keccak256_known_answers() {
+    assert!(
+        keccak256::digest_word([0 as u8; 0]) == generated_vectors::KECCAK256_EMPTY,
+    )
+    assert!(
+        keccak256::digest_word([97 as u8, 98, 99]) == generated_vectors::KECCAK256_ABC,
+    )
+}
+
+#[test]
+fn sha256_generated_vectors() {
+    for index in 0 .. generated_vectors::SHA256_GENERATED_LENGTHS.len() {
+        let input = deterministic_input(generated_vectors::SHA256_GENERATED_LENGTHS[index])
+        assert!(
+            sha256::digest_word(input.span()) == generated_vectors::SHA256_GENERATED_DIGESTS[index],
+        )
+    }
+}
+
+#[test]
+fn keccak256_generated_vectors() {
+    for index in 0 .. generated_vectors::KECCAK256_GENERATED_LENGTHS.len() {
+        let input = deterministic_input(generated_vectors::KECCAK256_GENERATED_LENGTHS[index])
+        assert!(
+            keccak256::digest_word(input.span())
+                == generated_vectors::KECCAK256_GENERATED_DIGESTS[index],
+        )
+    }
+}
+
+#[test]
+fn sha256_streaming_matches_one_shot() {
+    let input = deterministic_input(273)
+    let expected = sha256::digest_word(input.span())
+    for chunk_size in [1 as usize, 7, 31, 63, 64, 65, 135, 136, 137] {
+        assert!(sha256::stream_word(input.span(), chunk_size) == expected)
+    }
+    assert!(
+        sha256::stream_with_empty_update_word(input.span()) == expected,
+    )
+}
+
+#[test]
+fn keccak256_streaming_matches_one_shot() {
+    let input = deterministic_input(273)
+    let expected = keccak256::digest_word(input.span())
+    for chunk_size in [1 as usize, 7, 31, 64, 135, 136, 137] {
+        assert!(
+            keccak256::stream_word(input.span(), chunk_size) == expected,
+        )
+    }
+    assert!(
+        keccak256::stream_with_empty_update_word(input.span()) == expected,
+    )
+}
+
+#[test]
+fn sha256_uneven_partition_matches_one_shot() {
+    let input = deterministic_input(140)
+    let expected = sha256::digest_word(input.span())
+    var state = Sha256::new()
+    var offset: usize = 0
+    for requested in [1 as usize, 2, 5, 13, 29, 64] {
+        let remaining = 140 - offset
+        let chunk_len = if requested < remaining {
+            requested
+        } else {
+            remaining
+        }
+        state.update(input.span(), offset, len: chunk_len)
+        offset += chunk_len
+    }
+    state.update(input.span(), offset, len: 140 - offset)
+    assert!(state.finish_word() == expected)
+}
+
+#[test]
+fn keccak256_uneven_partition_matches_one_shot() {
+    let input = deterministic_input(140)
+    let expected = keccak256::digest_word(input.span())
+    var state = Keccak256::new()
+    var offset: usize = 0
+    for requested in [1 as usize, 2, 5, 13, 29, 64] {
+        let remaining = 140 - offset
+        let chunk_len = if requested < remaining {
+            requested
+        } else {
+            remaining
+        }
+        state.update(input.span(), offset, len: chunk_len)
+        offset += chunk_len
+    }
+    state.update(input.span(), offset, len: 140 - offset)
+    assert!(state.finish_word() == expected)
+}
+
+#[test]
+fn sha256_two_part_splits_match_one_shot() {
+    let input = deterministic_input(140)
+    let expected = sha256::digest_word(input.span())
+    for split in 0 .. 141 {
+        var state = Sha256::new()
+        state.update(input.span(), offset: 0, len: split)
+        state.update(input.span(), offset: split, len: 140 - split)
+        assert!(state.finish_word() == expected)
+    }
+}
+
+#[test]
+fn keccak256_two_part_splits_match_one_shot() {
+    let input = deterministic_input(140)
+    let expected = keccak256::digest_word(input.span())
+    for split in 0 .. 141 {
+        var state = Keccak256::new()
+        state.update(input.span(), offset: 0, len: split)
+        state.update(input.span(), offset: split, len: 140 - split)
+        assert!(state.finish_word() == expected)
+    }
+}

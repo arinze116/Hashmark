@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=80,<81"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hashmark-fe"
+version = "1.0.0"
+description = "Reproducible cryptographic evidence for Fe"
+readme = "README.md"
+requires-python = "==3.15.2"
+license = "MIT"
+authors = [{name = "Hashmark contributors"}]
+dependencies = ["pycryptodome==4.4.0"]
+
+[project.optional-dependencies]
+dev = ["coverage==7.17.3", "jsonschema==4.26.0"]
+
+[project.scripts]
+hashmark = "hashmark.cli:main"
+
+[tool.setuptools]
+packages = ["hashmark"]

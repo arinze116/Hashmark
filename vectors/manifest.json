@@ -1,0 +1,7 @@
+{
+  "generator": "byte[i] = (i * 131 + 17) mod 256",
+  "nist_archive_sha256": "929ef80b7b3418aca026643f6f248815913b60e01741a44bba9e118067f4c9b8",
+  "schema_version": 1,
+  "vector_count": 32,
+  "xkcp_commit": "d20c8fcaecc543f816a0721d0dfc13b4cf27c14d"
+}

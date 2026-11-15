@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "vectors": [
+    {
+      "algorithm": "sha256",
+      "category": "known_answer",
+      "expected_digest_hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "id": "sha256-empty",
+      "input_hex": "",
+      "input_length_bytes": 0,
+      "licence_or_usage_note": "NIST test vectors are public reference data for informal verification; use does not imply CAVP validation.",
+      "notes": "FIPS 180-4 SHA-256 empty-message response vector.",
+      "schema_version": 1,
+      "source_case_id": "Len = 0",
+      "source_document": "SHA256ShortMsg.rsp",
+      "source_name": "NIST CAVP",
+      "source_url": "https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/shs/shabytetestvectors.zip"
+    },
+    {
+      "algorithm": "sha256",
+      "category": "known_answer",
+      "expected_digest_hex": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      "id": "sha256-abc",
+      "input_hex": "616263",
+      "input_length_bytes": 3,
+      "licence_or_usage_note": "United States government work; cited as the algorithm standard.",
+      "notes": "Canonical SHA-256 example.",
+      "schema_version": 1,
+      "source_case_id": "message abc",
+      "source_document": "FIPS 180-4 SHA-256 example",
+      "source_name": "NIST FIPS 180-4",
+      "source_url": "https://doi.org/10.6028/NIST.FIPS.180-4"
+    },
+    {
+      "algorithm": "sha256",
+      "category": "known_answer",
+      "expected_digest_hex": "28969cdfa74a12c82f3bad960b0b000aca2ac329deea5c2328ebc6f2ba9802c1",
+      "id": "sha256-nist-short-d3",
+      "input_hex": "d3",
+      "input_length_bytes": 1,
+      "licence_or_usage_note": "NIST test vectors are public reference data for informal verification; use does not imply CAVP validation.",
+      "notes": "Selected byte-oriented NIST short-message vector.",
+      "schema_version": 1,
+      "source_case_id": "Len = 8; Msg = d3",
+      "source_document": "SHA256ShortMsg.rsp",
+      "source_name": "NIST CAVP",
+      "source_url": "https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/shs/shabytetestvectors.zip"
+    }
+  ]
+}
