@@ -5,7 +5,7 @@ Status labels in this document are factual confidence labels, not test outcomes.
 ## Verified baseline — 15 November 2026
 
 - **Verified:** the local checkout and `arinze116/Hashmark` remote were empty before implementation. There was no starting commit to preserve.
-- **Verified:** work began on `feat/hashmark-conformance-lab`; `main` remains untouched.
+- **Verified:** all implementation commits were created on `feat/hashmark-conformance-lab`; no direct development commit was made on `main`.
 - **Verified:** the host is Ubuntu 24.04.5 LTS on AArch64.
 - **Verified:** `fe 26.6.0 (5b3f96a)` is installed at `/home/ubuntu/.fe/bin/fe`.
 - **Verified:** the official contest starter is `https://github.com/fe-lang/builders-challenge-starter`, commit `f9d9aa92a03af82c2bbb0dc2e0810244eb13e686` when inspected.
