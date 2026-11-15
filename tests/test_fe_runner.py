@@ -37,14 +37,21 @@ class FeRunnerTests(unittest.TestCase):
         ), self.assertRaisesRegex(ToolchainMissingError, "requires Fe 26.6.0"):
             require_fe_version(Path("/tmp/fe"), Path(temporary))
 
-    def test_current_host_native_support_is_false(self) -> None:
-        self.assertFalse(native_supported_locally())
-
     def test_supported_native_platforms(self) -> None:
         with patch("hashmark.fe_runner.platform.system", return_value="Linux"), patch(
             "hashmark.fe_runner.platform.machine", return_value="x86_64",
         ):
             self.assertTrue(native_supported_locally())
+
+    def test_unsupported_native_platforms(self) -> None:
+        with patch("hashmark.fe_runner.platform.system", return_value="Linux"), patch(
+            "hashmark.fe_runner.platform.machine", return_value="aarch64",
+        ):
+            self.assertFalse(native_supported_locally())
+        with patch("hashmark.fe_runner.platform.system", return_value="Darwin"), patch(
+            "hashmark.fe_runner.platform.machine", return_value="x86_64",
+        ):
+            self.assertFalse(native_supported_locally())
         with patch("hashmark.fe_runner.platform.system", return_value="Darwin"), patch(
             "hashmark.fe_runner.platform.machine", return_value="arm64",
         ):
