@@ -2,11 +2,12 @@
 
 Hashmark requires no secrets, paid services, blockchain account, or deployment.
 
-## Approval-gated repository actions
+## Completed repository automation
 
-- Approve the first push of `feat/hashmark-conformance-lab` to `https://github.com/arinze116/Hashmark`.
-- After the x86-64 workflow passes, approve any merge to `main`, `v1.0.0` tag, or GitHub release. No force-push is needed or permitted.
-- Download the authoritative CI evidence artefact, place its passing files under `reports/demo/`, and capture the four required real screenshots under `docs/assets/`. These cannot be generated honestly on the ARM64 development host because Fe 26.6.0 cannot execute its nested native test binaries there.
+- The feature branch is published at `https://github.com/arinze116/Hashmark/tree/feat/hashmark-conformance-lab`.
+- The x86-64 workflow passed native, EVM, Python, coverage, dependency and deterministic-evidence jobs.
+- The authoritative artefact is committed under `reports/demo/`; real terminal, report, vector-detail, failure and mobile captures are under `docs/assets/`.
+- Merge, tag and release preparation are handled by the agent under the owner's explicit approval. No force-push is used.
 
 ## Required before the registration deadline
 
@@ -18,7 +19,6 @@ Hashmark requires no secrets, paid services, blockchain account, or deployment.
 
 - Use the private submission link sent to the registered contact.
 - Verify the declarations in `docs/SUBMISSION.md`, especially team membership, pre-existing work, reused code, and AI assistance.
-- Replace `PENDING_FINAL_COMMIT` and `PENDING_APPROVED_PUSH` in `docs/SUBMISSION.md` with the exact judged commit and passing CI URL.
 - Submit the public repository URL and the exact judged commit SHA by 25 November 2026, 00:59 WAT (24 November 2026, 23:59 UTC).
 
 ## Only if the project wins

@@ -24,7 +24,9 @@ Status labels in this document are factual confidence labels, not test outcomes.
 - **Verified:** Python.org publishes CPython 3.15.2 and PyPI publishes PyCryptodome 4.4.0 with CPython 3.15-compatible AArch64 wheels.
 - **Verified:** the installed `uv 0.12.6` catalogue did not offer CPython 3.15.2 for Linux AArch64, so the exact interpreter is built from the official CPython source tarball into a project-specific user directory.
 - **Verified:** PyCryptodome 4.4.0 installs and passes SHA-256/Keccak oracle tests under the project-local CPython 3.15.2 interpreter.
-- **Verified:** 105 Python tests pass. Coverage.py 7.17.3 cannot run on the project-local interpreter because that user-built Python lacks the optional `_sqlite3` module; the same suite measured 92% line coverage under the host Python 3.12.3 with the Python-version preflight patched only for measurement. CI enforces coverage under the exact Python 3.15.2 runtime supplied by `actions/setup-python`.
+- **Verified:** 105 Python tests pass. Coverage.py 7.17.3 cannot run on the project-local interpreter because that user-built Python lacks the optional `_sqlite3` module; the same suite measured 92% line coverage under the host Python 3.12.3 with the Python-version preflight patched only for measurement.
+- **Verified:** GitHub Actions run `43756110344` measured the same 92% coverage under exact CPython 3.15.2 and passed all Fe, Python, integration and dependency-consistency jobs at source revision `0e6aaa6a541890b76769c3dba61ff153861f0803`.
+- **Verified:** the CI integration run produced 64/64 passing backend/vector results, 2/2 target suites and 32/32 native differential comparisons. Its deterministic evidence is committed under `reports/demo/`.
 - **Verified:** generated report JSON validates against both Hashmark's fail-closed internal validator and the published Draft 2020-12 JSON Schema.
 - **Verified:** desktop/tablet/mobile QA at 1440, 1024, 768, 375, and 320 pixels shows no page-level horizontal overflow. Target tables retain local scrolling.
 - **Verified:** report text/status contrast ranges from 5.66:1 to 16.48:1. Structural borders are 3.08:1 or stronger against the report surface, satisfying the 3:1 non-text target.
@@ -36,13 +38,13 @@ Status labels in this document are factual confidence labels, not test outcomes.
 - Local AArch64 Linux runs report native as unavailable rather than treating it as passed. GitHub Actions on x86-64 Linux is the authoritative clean native run for this repository.
 - `.fe-version` records the exact requested compiler because Fe 26.6.0's ingot manifest has no verified compiler-version field. CI and preflight enforce the pin.
 - Runtime Python code uses only the standard library and PyCryptodome. Coverage and `jsonschema` are pinned development-only dependencies.
-- `reports/demo/` and the final all-backend screenshots are intentionally not generated on the ARM64 host. They must come from an approved x86-64 CI run so a passing native target is never fabricated.
+- `reports/demo/` is imported from the successful x86-64 CI artefact. Final screenshots under `docs/assets/` show that report and its actual CI terminal summary; the ARM64 host did not fabricate an integrated native pass.
 
 ## CI supply-chain pins
 
 - `actions/checkout` v6.0.1 commit `8e8c483db84b4bee98b60c0593521ed34d9990e8`.
 - `actions/setup-python` v6.1.0 commit `83679a892e2d95755f2dac6acb0bfd1e9ac5d548`.
-- `actions/upload-artifact` v5.0.0 commit `330a01c490aca151604b8cf639adc76d48f6c5d4`.
+- `actions/upload-artifact` v7.0.2 commit `cf430e030ddbb5b0abf93d22962f4752f3646cd9`.
 - Feup script is fetched from the Fe `v26.6.0` tag and checked against SHA-256 `b2dffd2d9d5b1a07d18e9321f57ab08442cc50df4a6004ee2fb538963812ee78` before execution.
 
 ## Source ledger

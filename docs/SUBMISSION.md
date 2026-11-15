@@ -44,7 +44,8 @@ Entrant confirmation required:
 ## Judged revision
 
 - Full commit SHA: `PENDING_FINAL_COMMIT`
-- CI run URL: `PENDING_APPROVED_PUSH`
+- Passing CI run URL: https://github.com/arinze116/Hashmark/actions/runs/43756110344
+- Committed report source revision: `0e6aaa6a541890b76769c3dba61ff153861f0803`
 - Passing report: `reports/demo/`
 - Controlled failure report: `reports/demo-failure/`
 - Demo recording: optional; not yet produced

@@ -4,9 +4,18 @@
 
 Hashmark independently checks Fe 26.6.0's built-in SHA-256 and Ethereum Keccak-256 implementations across native and EVM targets, then turns each vector into inspectable JSON, Markdown, and offline HTML evidence.
 
-**Status:** Fe 26.6.0 · SHA-256 + Ethereum Keccak-256 · native + local EVM tests · Python 3.15.2 oracle · MIT
+[![CI](https://github.com/arinze116/Hashmark/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/arinze116/Hashmark/actions/workflows/ci.yml)
 
-> Screenshot note: real all-backend screenshots will be added only after the first approved x86-64 CI run. The current ARM64 development host verifies the EVM suite locally and the native runner under user-space QEMU, but cannot honestly capture one integrated all-backend pass without system binfmt support. See [Human actions](docs/HUMAN_ACTIONS.md).
+| Authoritative x86-64 CI summary | Offline evidence report |
+| --- | --- |
+| ![GNOME Terminal showing Hashmark passing 64 of 64 backend-vector checks, two of two target suites and 32 of 32 differential comparisons](docs/assets/hashmark-terminal-summary.png) | ![Hashmark offline report showing PASS, 64 executed results, native and EVM target suites, and 32 differential comparisons](docs/assets/hashmark-report-overview.png) |
+| Actual terminal capture from the passing integration job. | Actual self-contained HTML report downloaded from the same CI run. |
+
+**Status:** Fe 26.6.0 · SHA-256 + Ethereum Keccak-256 · native + EVM · Python 3.15.2 oracle · [CI passing](https://github.com/arinze116/Hashmark/actions/runs/43756110344) · MIT
+
+**Run:** `python -m hashmark run --all --backend all --format all --output-dir reports/local`
+
+[Open the committed all-backend report](reports/demo/index.html) or inspect its [canonical JSON](reports/demo/hashmark-report.json).
 
 ## Why Hashmark exists
 
@@ -41,17 +50,29 @@ The report opens offline at `reports/local/index.html`. Hashmark refuses to over
 
 The committed corpus contains 32 vectors: 19 SHA-256 and 13 Ethereum Keccak-256. A complete two-backend run produces 64 backend/vector evidence records, two target-suite outcomes, and 32 native Fe-versus-oracle digest comparisons.
 
-Verified on the current development host:
+Verified by the pinned x86-64 workflow and local checks:
 
 | Check | Result | Evidence |
 | --- | ---: | --- |
-| Fe Sonatina/EVM suites | 10/10 pass | `fe test --backend sonatina` |
-| Native runner records under QEMU | 32/32 pass | strict `HASHMARK/1` records and summary |
-| Python tests | 105 pass | `python -m unittest discover -s tests -v` |
-| Python line coverage | 92% | `coverage report`; `hashmark/__main__.py` excluded |
-| Deterministic reports | byte-identical | JSON, Markdown, HTML, and sidecar compared across two runs |
+| Full backend/vector run | 64/64 pass | [CI integration run](https://github.com/arinze116/Hashmark/actions/runs/43756110344) |
+| Fe target suites | 2/2 pass | ten shared tests on Sonatina/EVM and native |
+| Native differential comparisons | 32/32 pass | committed `HASHMARK/1` protocol log |
+| Python tests | 105 pass | CPython 3.15.2 CI job |
+| Python line coverage | 92% | Coverage.py 7.17.3; `hashmark/__main__.py` excluded |
+| Deterministic reports | byte-identical | JSON, Markdown, HTML, sidecar, and native protocol compared twice |
 
-The x86-64 GitHub Actions job is the authoritative integrated native run because Fe 26.6.0 does not execute native tests on ARM64 Linux. A skipped or unavailable target is never counted as passing.
+The x86-64 GitHub Actions job is authoritative because Fe 26.6.0 does not execute native tests on ARM64 Linux. A skipped or unavailable target is never counted as passing.
+
+## Evidence screenshots
+
+| Expanded boundary evidence | Controlled negative test |
+| --- | --- |
+| ![Expanded native SHA-256 boundary vector showing identical expected, Fe and independent oracle digests](docs/assets/hashmark-vector-detail.png) | ![Controlled failure report placing the corrupted SHA-256 expected digest before successful evidence](docs/assets/hashmark-controlled-failure.png) |
+| `sha256-boundary-56` exposes the exact input fingerprint and three digest values. | A disposable mutation exits non-zero and produces failure-first evidence. |
+
+![Mobile Hashmark report at 375 pixels showing a responsive summary and locally scrollable target table](docs/assets/hashmark-report-mobile.png)
+
+The mobile report retains the same status text and evidence hierarchy without page-level horizontal overflow.
 
 ## Architecture
 
