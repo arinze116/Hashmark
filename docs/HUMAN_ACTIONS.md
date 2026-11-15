@@ -19,7 +19,7 @@ Hashmark requires no secrets, paid services, blockchain account, or deployment.
 
 - Use the private submission link sent to the registered contact.
 - Verify the declarations in `docs/SUBMISSION.md`, especially team membership, pre-existing work, reused code, and AI assistance.
-- Submit the public repository URL and the exact judged commit SHA by 25 November 2026, 00:59 WAT (24 November 2026, 23:59 UTC).
+- Submit the public repository URL and exact judged commit `3b5c3a6151b1f3acb1a63bdc09d0e214af80dad0` by 25 November 2026, 00:59 WAT (24 November 2026, 23:59 UTC).
 
 ## Only if the project wins
 

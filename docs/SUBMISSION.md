@@ -43,9 +43,11 @@ Entrant confirmation required:
 
 ## Judged revision
 
-- Full judged source commit SHA: `fb45a89f64cbd237e92165029a5aafd2f0f88c0e`
-- Passing CI run URL: https://github.com/arinze116/Hashmark/actions/runs/43756807882
-- Committed report source revision: `fb45a89f64cbd237e92165029a5aafd2f0f88c0e`
+- Full `v1.0.0` release and judged commit SHA: `3b5c3a6151b1f3acb1a63bdc09d0e214af80dad0`
+- Passing release CI run: https://github.com/arinze116/Hashmark/actions/runs/43757276440
+- Release: https://github.com/arinze116/Hashmark/releases/tag/v1.0.0
+- Release evidence source revision: `3b5c3a6151b1f3acb1a63bdc09d0e214af80dad0`
+- Committed fallback report source revision: `fb45a89f64cbd237e92165029a5aafd2f0f88c0e`
 - Passing report: `reports/demo/`
 - Controlled failure report: `reports/demo-failure/`
 - Demo recording: optional; not yet produced
