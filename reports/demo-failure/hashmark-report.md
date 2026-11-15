@@ -39,8 +39,8 @@
 
 ## Provenance
 
-- Source revision: `UNCOMMITTED`
-- Source tree SHA-256: `72910a9b175fdd7f5241707468f0b0ec117fa576b0fddb2cf7e96ec7a3816039`
+- Source revision: `20f90f4ef87d5f118c57b223ab8d2d42cd50fec4`
+- Source tree SHA-256: `1935b5f438661736acd3ec9ba68e3c3156158149032830c89e9551ad081f67a7`
 - Fixture manifest SHA-256: `9321ceae1d02799403e24a4aafc61a298e67bf8b6bd63838dd5a4326e772d2f3`
 - Fe: `fe 26.6.0 (5b3f96a)`
 - Python: `3.15.2`
