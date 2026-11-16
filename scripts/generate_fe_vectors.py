@@ -36,7 +36,7 @@ def generate_constants(fixtures: list[Fixture]) -> str:
         ]
         prefix = algorithm.upper()
         lines.extend(_array(f"{prefix}_GENERATED_LENGTHS", generated, "input_length_bytes"))
-        digests = ", ".join(f"0x{item.expected_digest_hex}" for item in generated)
+        digests = ", ".join(_constant_name(item.id) for item in generated)
         lines.append(f"pub const {prefix}_GENERATED_DIGESTS: [u256; {len(generated)}] = [{digests}]")
         lines.append("")
     return "\n".join(lines)

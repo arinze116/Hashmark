@@ -5,7 +5,7 @@ All notable project changes are documented here.
 ## Unreleased — final compliance audit
 
 - Added a typed Fe `DigestCheck` conformance result and reusable streaming suite.
-- Removed duplicated expected digests from the generated native runner.
+- Removed duplicated expected digests from the generated native runner and aggregate arrays.
 - Added a native `--self-test` mode and generation-drift tests/CI enforcement.
 - Made report source-revision detection deterministic when Git is unavailable.
 - Updated contest, release, disclosure, and reproducibility documentation from current official sources.

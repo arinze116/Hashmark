@@ -24,7 +24,7 @@ Status labels in this document are factual confidence labels, not test outcomes.
 - **Verified:** Python.org publishes CPython 3.15.2 and PyPI publishes PyCryptodome 4.4.0 with CPython 3.15-compatible AArch64 wheels.
 - **Verified:** the installed `uv 0.12.6` catalogue did not offer CPython 3.15.2 for Linux AArch64, so the exact interpreter is built from the official CPython source tarball into a project-specific user directory.
 - **Verified:** PyCryptodome 4.4.0 installs and passes SHA-256/Keccak oracle tests under the project-local CPython 3.15.2 interpreter.
-- **Verified:** the published v1.0.0 suite had 105 Python tests. The final-audit branch has 108 tests and 92% line coverage under the official `python:3.15.2-slim` ARM64 image with Git installed; vector validation and `pip check` also pass.
+- **Verified:** the published v1.0.0 suite had 105 Python tests. The final-audit branch has 109 tests and 92% line coverage under the official `python:3.15.2-slim` ARM64 image with Git installed; vector validation and `pip check` also pass.
 - **Verified:** GitHub Actions release run `43757276440` measured 92% coverage under exact CPython 3.15.2 and passed all Fe, Python, integration and dependency-consistency jobs at source revision `3b5c3a6151b1f3acb1a63bdc09d0e214af80dad0`.
 - **Verified:** the CI integration run produced 64/64 passing backend/vector results, 2/2 target suites and 32/32 native differential comparisons. Its deterministic evidence is committed under `reports/demo/`.
 - **Verified:** generated report JSON validates against both Hashmark's fail-closed internal validator and the published Draft 2020-12 JSON Schema.
@@ -39,7 +39,7 @@ Status labels in this document are factual confidence labels, not test outcomes.
 - The default manifest target remains Sonatina/EVM. Native commands always pass `--backend native` explicitly.
 - Local AArch64 Linux runs report native as unavailable rather than treating it as passed. GitHub Actions on x86-64 Linux is the authoritative clean native run for this repository.
 - `.fe-version` records the exact requested compiler because Fe 26.6.0's ingot manifest has no verified compiler-version field. CI and preflight enforce the pin.
-- `src/generated_vectors.fe` is the only generated Fe definition of expected digest values. The test suite and native runner both consume those constants, and CI regenerates the files and requires a clean diff.
+- `src/generated_vectors.fe` is the only generated Fe definition of expected digest values. Each digest literal appears once; aggregate arrays reference the canonical named constants. The test suite and native runner both consume those constants, and CI regenerates the files and requires a clean diff.
 - `DigestCheck` is a small Fe-native result type rather than a duplicate hashing layer. It exposes expected/observed words and a pass predicate while still delegating all hashing to `core::hash`.
 - Runtime Python code uses only the standard library and PyCryptodome. Coverage and `jsonschema` are pinned development-only dependencies.
 - `reports/demo/` is imported from the successful x86-64 CI artefact. Final screenshots under `docs/assets/` show that report and its actual CI terminal summary; the ARM64 host did not fabricate an integrated native pass.

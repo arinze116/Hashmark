@@ -20,6 +20,11 @@ class GenerationTests(unittest.TestCase):
             self.assertIn(f"generated_vectors::{name}", runner)
             self.assertNotIn(f"0x{fixture.expected_digest_hex}", runner)
 
+    def test_each_digest_literal_has_one_generated_fe_definition(self) -> None:
+        constants = generate_constants(self.fixtures)
+        for fixture in self.fixtures:
+            self.assertEqual(constants.count(f"0x{fixture.expected_digest_hex}"), 1)
+
     def test_native_runner_exposes_streaming_self_test(self) -> None:
         runner = generate_runner(self.fixtures)
         self.assertIn('args.get(1) == "--self-test"', runner)

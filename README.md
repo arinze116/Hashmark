@@ -61,7 +61,7 @@ Published v1.0.0 evidence, verified by the pinned x86-64 workflow:
 | Python line coverage | 92% | Coverage.py 7.17.3; `hashmark/__main__.py` excluded |
 | Deterministic reports | byte-identical | JSON, Markdown, HTML, sidecar, and native protocol compared twice |
 
-The final-audit branch additionally passes 108 Python tests at 92% line coverage, ten Sonatina/EVM Fe suites, native IR compilation on AArch64 Linux, and an x86-64 native executable run under isolated QEMU with 32/32 vectors plus the shared streaming self-test. These audit-branch results are local evidence until that commit is pushed and CI runs.
+The final-audit branch additionally passes 109 Python tests at 92% line coverage, ten Sonatina/EVM Fe suites, native IR compilation on AArch64 Linux, and an x86-64 native executable run under isolated QEMU with 32/32 vectors plus the shared streaming self-test. These audit-branch results are local evidence until that commit is pushed and CI runs.
 
 The x86-64 GitHub Actions job is authoritative because Fe 26.6.0 does not execute native tests on ARM64 Linux. A skipped or unavailable target is never counted as passing.
 
