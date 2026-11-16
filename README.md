@@ -11,7 +11,7 @@ Hashmark independently checks Fe 26.6.0's built-in SHA-256 and Ethereum Keccak-2
 | ![GNOME Terminal showing Hashmark passing 64 of 64 backend-vector checks, two of two target suites and 32 of 32 differential comparisons](docs/assets/hashmark-terminal-summary.png) | ![Hashmark offline report showing PASS, 64 executed results, native and EVM target suites, and 32 differential comparisons](docs/assets/hashmark-report-overview.png) |
 | Actual terminal capture from the passing integration job. | Actual self-contained HTML report downloaded from the same CI run. |
 
-**Status:** Fe 26.6.0 · SHA-256 + Ethereum Keccak-256 · native + EVM · Python 3.15.2 oracle · [CI passing](https://github.com/arinze116/Hashmark/actions/runs/43756807882) · MIT
+**Status:** Fe 26.6.0 · SHA-256 + Ethereum Keccak-256 · native + EVM · Python 3.15.2 oracle · [v1.0.0 release CI passing](https://github.com/arinze116/Hashmark/actions/runs/43757276440) · MIT
 
 **Run:** `python -m hashmark run --all --backend all --format all --output-dir reports/local`
 
@@ -50,16 +50,18 @@ The report opens offline at `reports/local/index.html`. Hashmark refuses to over
 
 The committed corpus contains 32 vectors: 19 SHA-256 and 13 Ethereum Keccak-256. A complete two-backend run produces 64 backend/vector evidence records, two target-suite outcomes, and 32 native Fe-versus-oracle digest comparisons.
 
-Verified by the pinned x86-64 workflow and local checks:
+Published v1.0.0 evidence, verified by the pinned x86-64 workflow:
 
 | Check | Result | Evidence |
 | --- | ---: | --- |
-| Full backend/vector run | 64/64 pass | [CI integration run](https://github.com/arinze116/Hashmark/actions/runs/43756807882) |
+| Full backend/vector run | 64/64 pass | [Release CI integration run](https://github.com/arinze116/Hashmark/actions/runs/43757276440) |
 | Fe target suites | 2/2 pass | ten shared tests on Sonatina/EVM and native |
 | Native differential comparisons | 32/32 pass | committed `HASHMARK/1` protocol log |
 | Python tests | 105 pass | CPython 3.15.2 CI job |
 | Python line coverage | 92% | Coverage.py 7.17.3; `hashmark/__main__.py` excluded |
 | Deterministic reports | byte-identical | JSON, Markdown, HTML, sidecar, and native protocol compared twice |
+
+The final-audit branch additionally passes 108 Python tests at 92% line coverage, ten Sonatina/EVM Fe suites, native IR compilation on AArch64 Linux, and an x86-64 native executable run under isolated QEMU with 32/32 vectors plus the shared streaming self-test. These audit-branch results are local evidence until that commit is pushed and CI runs.
 
 The x86-64 GitHub Actions job is authoritative because Fe 26.6.0 does not execute native tests on ARM64 Linux. A skipped or unavailable target is never counted as passing.
 
@@ -98,7 +100,17 @@ Read [Architecture](docs/ARCHITECTURE.md) and [ADR 0001](docs/adr/0001-language-
 
 ## Fe-specific contribution
 
-Hashmark exercises `core::hash::{sha256, Sha256, keccak256, Keccak256}` directly. One-shot calls, repeated state creation, zero-length updates, uneven partitions, fixed chunk sizes, and every two-part split through 140 bytes are tested in Fe. `fe test --backend sonatina` and `fe test --backend native` compile the same source rather than maintaining target-specific vector suites.
+Hashmark exercises `core::hash::{sha256, Sha256, keccak256, Keccak256}` directly. Its reusable Fe API returns a typed result that preserves both the expected and observed digest:
+
+```fe
+let check = sha256::check(input.span(), generated_vectors::SHA256_BOUNDARY_56)
+assert!(check.passes())
+let observed = check.observed()
+```
+
+The same API supports one-shot, fixed-chunk, and explicit-empty-update checks. `conformance::streaming_suite()` covers uneven partitions and every two-part split through 140 bytes. The generated native runner consumes the same `generated_vectors` constants as the Fe tests, so expected digests are not duplicated in a second generated source.
+
+`fe test --backend sonatina` and `fe test --backend native` compile the same source rather than maintaining target-specific vector suites. The native executable also exposes `--self-test` as a direct target-neutral streaming check for constrained or cross-emulated environments.
 
 Fe calls its local EVM execution backend `sonatina`; Hashmark presents it as `evm` in its public CLI and reports. No contract, wallet, RPC endpoint, testnet, or mainnet deployment is involved.
 
@@ -193,23 +205,28 @@ python -m pip install -r requirements-dev.txt -e .
 python -m coverage run -m unittest discover -s tests -v
 python -m coverage report
 python -m hashmark validate-vectors
+python scripts/generate_fe_vectors.py
+git diff --exit-code -- src/generated_vectors.fe src/native_runner.fe
 ```
 
 The pinned GitHub Actions workflow runs separate Fe, Python, integration, and dependency-consistency jobs. Integration generates the full report twice, compares every artefact byte-for-byte, validates report invariants, and uploads the evidence directory.
+
+For a compiler-only build on any release platform, run `fe build --backend native --emit ir --out-dir out/native-ir`. On x86-64 Linux or AArch64 macOS, `fe build --backend native --emit executable --out-dir out/native` produces the runnable `hashmark` program.
 
 ## Limitations and non-claims
 
 - Passing Hashmark does not provide formal NIST CAVP validation or certification.
 - Hashmark is not a security audit, proof of cryptographic security, or exhaustive input test.
 - Fe 26.6.0 describes itself as not production-ready; this project records observed behavior for that pinned compiler.
+- That general maturity warning does not affect contest eligibility: the official challenge permits Fe 26.5.0 or later, native or EVM projects, and working prototypes with documented limitations.
 - EVM records carry aggregate Fe test evidence rather than fabricated per-vector EVM digests.
 - The standard corpus is deterministic and bounded; fuzzing and benchmarking are outside the MVP.
 
 ## Contest and AI-assistance disclosure
 
-Hashmark was built for the [Fe Builders Challenge](https://fe-lang.org/contest/) during the official build window. An autonomous OpenAI coding agent assisted with research, implementation, tests, documentation, and reproducibility work under the project owner's direction. The responsible human entrant must review, understand, and be able to explain the code, architecture, evidence model, and limitations.
+Hashmark was built for the [Fe Builders Challenge](https://fe-lang.org/contest/) during the official build window. Repository history begins on 15 November 2026 and contains no pre-contest source; the entrant must still confirm that there is no undisclosed off-repository starting work. An autonomous OpenAI coding agent assisted with research, implementation, tests, documentation, and reproducibility work under the project owner's direction. The responsible human entrant must review, understand, and be able to explain the code, architecture, evidence model, and limitations.
 
-Hashmark reuses no cryptographic implementation. It calls Fe `core::hash`, Python `hashlib`, and PyCryptodome, and attributes NIST and XKCP vector sources. Research references and exact source decisions are recorded in [Implementation notes](docs/IMPLEMENTATION_NOTES.md).
+Hashmark copies no cryptographic implementation. It calls Fe `core::hash`, Python `hashlib`, and PyCryptodome; generated boundary inputs are Hashmark code, while NIST and XKCP materials are attributed reference data. Research references and exact source decisions are recorded in [Implementation notes](docs/IMPLEMENTATION_NOTES.md).
 
 ## Licence
 

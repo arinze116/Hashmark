@@ -50,6 +50,7 @@ Unknown and missing fields fail validation. IDs must be unique across both algor
 ```console
 python -m hashmark validate-vectors
 python scripts/generate_fe_vectors.py
+git diff --exit-code -- src/generated_vectors.fe src/native_runner.fe
 fe fmt --check
 fe test --backend sonatina
 fe test --backend native

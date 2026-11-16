@@ -2,6 +2,14 @@
 
 All notable project changes are documented here.
 
+## Unreleased — final compliance audit
+
+- Added a typed Fe `DigestCheck` conformance result and reusable streaming suite.
+- Removed duplicated expected digests from the generated native runner.
+- Added a native `--self-test` mode and generation-drift tests/CI enforcement.
+- Made report source-revision detection deterministic when Git is unavailable.
+- Updated contest, release, disclosure, and reproducibility documentation from current official sources.
+
 ## 1.0.0 — 2026-11-15
 
 - Added Fe 26.6.0 SHA-256 and Ethereum Keccak-256 adapters.

@@ -26,7 +26,7 @@ Expand `sha256-boundary-56` and `keccak256-boundary-136`. Explain that these inp
 
 ## 1:10–1:40 — Streaming and source traceability
 
-Show the Fe streaming suite names and the fixture provenance fields. Explain one-shot versus fixed chunks, uneven chunks, zero-length updates, and every two-part split through 140 bytes.
+Show the Fe `DigestCheck` API, streaming suite names, and fixture provenance fields. Explain one-shot versus fixed chunks, uneven chunks, zero-length updates, and every two-part split through 140 bytes. On a supported native host, `out/native/hashmark --self-test` runs the same reusable streaming suite directly.
 
 ## 1:40–2:15 — Controlled failure
 

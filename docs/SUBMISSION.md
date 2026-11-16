@@ -16,7 +16,7 @@ Hashmark independently verifies Fe's SHA-256 and Ethereum Keccak-256 implementat
 
 ## Fe-specific highlight
 
-Hashmark directly exercises Fe 26.6.0 `core::hash` one-shot and streaming APIs. The same Fe source runs on Sonatina/EVM and native backends, while a strict native protocol exposes exact Fe digests for differential comparison with independent Python references.
+Hashmark directly exercises Fe 26.6.0 `core::hash` one-shot and streaming APIs through a typed `DigestCheck` result. The same generated reference constants and reusable streaming suite run on Sonatina/EVM and native backends, while a strict native protocol exposes exact Fe digests for differential comparison with independent Python references.
 
 ## Evidence summary
 
@@ -27,11 +27,13 @@ Hashmark directly exercises Fe 26.6.0 `core::hash` one-shot and streaming APIs. 
 - Negative fixture, protocol, mutation, timeout, and report-write tests.
 - Pinned clean-checkout CI for x86-64 native and EVM execution.
 
-## AI and reused-work disclosure draft
+## Pre-existing work, reused code, and AI disclosure draft
 
-An autonomous OpenAI coding agent assisted with research, implementation, testing, documentation, and reproducibility work under the project owner's direction. The responsible human entrant reviewed the submitted code and can explain the architecture, evidence model, source provenance, and limitations.
+**Pre-existing work:** repository history begins on 15 November 2026, inside the contest build window, and contains no pre-contest source. The entrant must confirm that there is no undisclosed off-repository starting work.
 
-Hashmark does not reuse a custom cryptographic implementation. It calls Fe `core::hash`, Python `hashlib`, and PyCryptodome. NIST and XKCP materials are used as attributed reference sources.
+**Reused code and data:** Hashmark copies no cryptographic implementation. It calls Fe `core::hash`, Python `hashlib`, and PyCryptodome. NIST and XKCP materials are used as attributed reference data; generated boundary inputs and the conformance/reporting code are Hashmark work.
+
+**AI assistance:** an autonomous OpenAI coding agent assisted with official-source research, implementation, testing, documentation, and reproducibility work under the project owner's direction. The entrant must review the submitted code and confirm that they can explain the architecture, evidence model, source provenance, and limitations.
 
 Entrant confirmation required:
 
@@ -41,7 +43,7 @@ Entrant confirmation required:
 - [ ] AI-assistance wording is accepted and accurate.
 - [ ] Public repository and licence are correct.
 
-## Judged revision
+## Published release baseline
 
 - Full `v1.0.0` release and judged commit SHA: `3b5c3a6151b1f3acb1a63bdc09d0e214af80dad0`
 - Passing release CI run: https://github.com/arinze116/Hashmark/actions/runs/43757276440
@@ -51,6 +53,8 @@ Entrant confirmation required:
 - Passing report: `reports/demo/`
 - Controlled failure report: `reports/demo-failure/`
 - Demo recording: optional; not yet produced
+
+The final audit may recommend a later commit. Do not submit a later local commit until it is pushed to the public repository and its CI result is verified. The exact recommended candidate is recorded in `docs/FINAL_AUDIT.md`; the v1.0.0 tag must remain on the commit above.
 
 ## Human-only actions
 

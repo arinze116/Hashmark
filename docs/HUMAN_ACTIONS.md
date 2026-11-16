@@ -7,7 +7,7 @@ Hashmark requires no secrets, paid services, blockchain account, or deployment.
 - The feature branch is published at `https://github.com/arinze116/Hashmark/tree/feat/hashmark-conformance-lab`.
 - The x86-64 workflow passed native, EVM, Python, coverage, dependency and deterministic-evidence jobs.
 - The authoritative artefact is committed under `reports/demo/`; real terminal, report, vector-detail, failure and mobile captures are under `docs/assets/`.
-- Merge, tag and release preparation are handled by the agent under the owner's explicit approval. No force-push is used.
+- The published `v1.0.0` tag remains anchored to `3b5c3a6151b1f3acb1a63bdc09d0e214af80dad0` and must not be moved or recreated.
 
 ## Required before the registration deadline
 
@@ -19,7 +19,8 @@ Hashmark requires no secrets, paid services, blockchain account, or deployment.
 
 - Use the private submission link sent to the registered contact.
 - Verify the declarations in `docs/SUBMISSION.md`, especially team membership, pre-existing work, reused code, and AI assistance.
-- Submit the public repository URL and exact judged commit `3b5c3a6151b1f3acb1a63bdc09d0e214af80dad0` by 25 November 2026, 00:59 WAT (24 November 2026, 23:59 UTC).
+- Choose the exact judged commit by 25 November 2026, 00:59 WAT (24 November 2026, 23:59 UTC): either the published v1.0.0 commit `3b5c3a6151b1f3acb1a63bdc09d0e214af80dad0`, or the later commit recommended in `docs/FINAL_AUDIT.md` after it is pushed and CI passes.
+- Enter that full 40-character SHA in the private submission form. A branch name, tag name, or abbreviated SHA is insufficient.
 
 ## Only if the project wins
 

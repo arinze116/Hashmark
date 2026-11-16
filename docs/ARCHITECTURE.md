@@ -9,7 +9,9 @@ Hashmark establishes reproducible evidence about Fe's existing hash implementati
 | Component | Responsibility | Trust boundary |
 | --- | --- | --- |
 | `src/sha256.fe`, `src/keccak256.fe` | thin adapters over `core::hash` | Fe compiler and core library |
-| `src/tests.fe` | shared target-neutral assertions and streaming checks | Sonatina and native execution backends |
+| `src/digest_check.fe` | typed expected/observed conformance result | caller-supplied reference digest |
+| `src/conformance.fe` | reusable streaming, uneven-partition, and split checks | target-neutral Fe execution |
+| `src/tests.fe` | shared target-neutral assertions over the public Fe API | Sonatina and native execution backends |
 | `src/native_runner.fe` | deterministic per-vector digest emission | untrusted stdout at the Python boundary |
 | `vectors/` | immutable input, expected digest, and provenance | strict schema before execution |
 | `hashmark/oracle.py` | independent Python digest calculation | Python standard library and PyCryptodome |
@@ -45,6 +47,8 @@ sequenceDiagram
 
 Native records contain the actual digest emitted by Fe, so native results compare fixture, Fe, and oracle values byte-for-byte. The current EVM test runner exposes aggregate test output rather than per-vector digest returns. EVM result rows therefore use `evidence_basis: evm_test_status` and set `fe_digest` to `null`; they never fabricate a value.
 
+`src/generated_vectors.fe` is the sole generated Fe definition of expected digests. Both `src/tests.fe` and `src/native_runner.fe` reference those constants. Python generation tests and CI regenerate both files and fail on a diff, preventing fixture/Fe drift.
+
 An overall report is `PASS` only when every selected result is `PASS` and every requested target completed with `PASS`. `SKIPPED`, `UNAVAILABLE`, `NOT_RUN`, and empty result sets cannot produce success.
 
 ## Determinism
@@ -63,6 +67,6 @@ Reports use stable ordering by algorithm, vector ID, and backend. They contain n
 
 ## Platform decision
 
-Fe 26.6.0 supports native executable/test emission on x86-64 Linux and AArch64 macOS. The development node is AArch64 Linux, so local native execution is reported unavailable by the public CLI. User-space QEMU verified the emitted x86-64 native runner, but nested native test execution still requires binfmt. The pinned x86-64 GitHub Actions job is therefore authoritative for the integrated native suite.
+Fe 26.6.0 supports native executable/test emission on x86-64 Linux and AArch64 macOS. The development node is AArch64 Linux, so local native execution is reported unavailable by the public CLI. The audit used the official x86-64 compiler under QEMU 10.2.1 with an x86 cross-linker to build and execute the native runner without changing host binfmt. All 32 vector records and the shared streaming self-test passed. The pinned x86-64 GitHub Actions job remains the authoritative `fe test --backend native` evidence because nested test execution still requires a compatible host or binfmt handler.
 
 See [ADR 0001](adr/0001-language-and-architecture.md) and [Implementation notes](IMPLEMENTATION_NOTES.md).
