@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 
 from hashmark.fixtures import fixture_manifest_sha256, load_fixtures
 from hashmark.models import EvidenceResult, TargetEvidence
@@ -242,6 +243,10 @@ class ReportTests(unittest.TestCase):
     def test_source_metadata_is_stable(self) -> None:
         self.assertEqual(len(source_tree_sha256(self.root)), 64)
         self.assertTrue(source_revision(self.root))
+
+    def test_source_revision_falls_back_when_git_is_unavailable(self) -> None:
+        with patch("hashmark.report.subprocess.run", side_effect=FileNotFoundError):
+            self.assertEqual(source_revision(self.root), "UNCOMMITTED")
 
 
 if __name__ == "__main__":

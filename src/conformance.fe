@@ -1,0 +1,108 @@
+use core::hash::{Keccak256, Sha256}
+
+use super::{deterministic_input, keccak256, sha256}
+
+/// Check SHA-256 fixed-size streaming and an empty update against one-shot hashing.
+pub fn sha256_streaming_matches_one_shot() -> bool {
+    let input = deterministic_input(273)
+    let expected = sha256::digest_word(input.span())
+    for chunk_size in [1 as usize, 7, 31, 63, 64, 65, 135, 136, 137] {
+        if !sha256::check_stream(input.span(), chunk_size, expected).passes() {
+            return false
+        }
+    }
+    sha256::check_with_empty_update(input.span(), expected).passes()
+}
+
+/// Check Keccak-256 fixed-size streaming and an empty update against one-shot hashing.
+pub fn keccak256_streaming_matches_one_shot() -> bool {
+    let input = deterministic_input(273)
+    let expected = keccak256::digest_word(input.span())
+    for chunk_size in [1 as usize, 7, 31, 64, 135, 136, 137] {
+        if !keccak256::check_stream(input.span(), chunk_size, expected).passes() {
+            return false
+        }
+    }
+    keccak256::check_with_empty_update(input.span(), expected).passes()
+}
+
+/// Check SHA-256 across deliberately uneven update sizes.
+pub fn sha256_uneven_partition_matches_one_shot() -> bool {
+    let input = deterministic_input(140)
+    let expected = sha256::digest_word(input.span())
+    var state = Sha256::new()
+    var offset: usize = 0
+    for requested in [1 as usize, 2, 5, 13, 29, 64] {
+        let remaining = 140 - offset
+        let chunk_len = if requested < remaining {
+            requested
+        } else {
+            remaining
+        }
+        state.update(input.span(), offset, len: chunk_len)
+        offset += chunk_len
+    }
+    state.update(input.span(), offset, len: 140 - offset)
+    state.finish_word() == expected
+}
+
+/// Check Keccak-256 across deliberately uneven update sizes.
+pub fn keccak256_uneven_partition_matches_one_shot() -> bool {
+    let input = deterministic_input(140)
+    let expected = keccak256::digest_word(input.span())
+    var state = Keccak256::new()
+    var offset: usize = 0
+    for requested in [1 as usize, 2, 5, 13, 29, 64] {
+        let remaining = 140 - offset
+        let chunk_len = if requested < remaining {
+            requested
+        } else {
+            remaining
+        }
+        state.update(input.span(), offset, len: chunk_len)
+        offset += chunk_len
+    }
+    state.update(input.span(), offset, len: 140 - offset)
+    state.finish_word() == expected
+}
+
+/// Check every SHA-256 two-part split through 140 bytes.
+pub fn sha256_two_part_splits_match_one_shot() -> bool {
+    let input = deterministic_input(140)
+    let expected = sha256::digest_word(input.span())
+    for split in 0 .. 141 {
+        var state = Sha256::new()
+        state.update(input.span(), offset: 0, len: split)
+        state.update(input.span(), offset: split, len: 140 - split)
+        if state.finish_word() != expected {
+            return false
+        }
+    }
+    true
+}
+
+/// Check every Keccak-256 two-part split through 140 bytes.
+pub fn keccak256_two_part_splits_match_one_shot() -> bool {
+    let input = deterministic_input(140)
+    let expected = keccak256::digest_word(input.span())
+    for split in 0 .. 141 {
+        var state = Keccak256::new()
+        state.update(input.span(), offset: 0, len: split)
+        state.update(input.span(), offset: split, len: 140 - split)
+        if state.finish_word() != expected {
+            return false
+        }
+    }
+    true
+}
+
+/// Run every target-neutral streaming conformance check.
+pub fn streaming_suite() -> bool {
+    let sha_chunks = sha256_streaming_matches_one_shot()
+    let keccak_chunks = keccak256_streaming_matches_one_shot()
+    let sha_uneven = sha256_uneven_partition_matches_one_shot()
+    let keccak_uneven = keccak256_uneven_partition_matches_one_shot()
+    let sha_splits = sha256_two_part_splits_match_one_shot()
+    let keccak_splits = keccak256_two_part_splits_match_one_shot()
+    sha_chunks && keccak_chunks && sha_uneven && keccak_uneven && sha_splits && keccak_splits
+}

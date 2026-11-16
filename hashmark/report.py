@@ -51,9 +51,12 @@ class ReportWriteError(OSError):
 def source_revision(project_root: Path) -> str:
     """Return the full Git revision or a deterministic uncommitted marker."""
 
-    completed = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=project_root, capture_output=True, check=False, text=True,
-    )
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=project_root, capture_output=True, check=False, text=True,
+        )
+    except OSError:
+        return "UNCOMMITTED"
     revision = completed.stdout.strip()
     return revision if completed.returncode == 0 and len(revision) == 40 else "UNCOMMITTED"
 

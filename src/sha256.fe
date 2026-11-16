@@ -1,5 +1,7 @@
 use core::hash::{HashInput, Sha256, sha256, sha256_word}
 
+use super::digest_check::DigestCheck
+
 /// Hash borrowed bytes with Fe's target-neutral SHA-256 implementation.
 pub fn digest<T: HashInput>(_ input: T) -> [u8; 32] {
     sha256(input)
@@ -8,6 +10,11 @@ pub fn digest<T: HashInput>(_ input: T) -> [u8; 32] {
 /// Hash borrowed bytes and return the digest as a big-endian word.
 pub fn digest_word<T: HashInput>(_ input: T) -> u256 {
     sha256_word(input)
+}
+
+/// Compare Fe's one-shot digest with a caller-supplied reference value.
+pub fn check<T: HashInput>(_ input: T, _ expected: u256) -> DigestCheck {
+    DigestCheck::new(expected, digest_word(input))
 }
 
 /// Hash the input through repeated updates of at most `chunk_size` bytes.
@@ -29,10 +36,24 @@ pub fn stream_word<T: HashInput>(_ input: T, _ chunk_size: usize) -> u256 {
     state.finish_word()
 }
 
+/// Compare chunked hashing with a caller-supplied reference value.
+pub fn check_stream<T: HashInput>(
+    _ input: T,
+    _ chunk_size: usize,
+    _ expected: u256,
+) -> DigestCheck {
+    DigestCheck::new(expected, stream_word(input, chunk_size))
+}
+
 /// Exercise the documented no-op update before hashing the complete input.
 pub fn stream_with_empty_update_word<T: HashInput>(_ input: T) -> u256 {
     var state = Sha256::new()
     state.update(input, offset: 0, len: 0)
     state.update(input, offset: 0, len: input.input_len())
     state.finish_word()
+}
+
+/// Compare hashing with an explicit empty update against a reference value.
+pub fn check_with_empty_update<T: HashInput>(_ input: T, _ expected: u256) -> DigestCheck {
+    DigestCheck::new(expected, stream_with_empty_update_word(input))
 }

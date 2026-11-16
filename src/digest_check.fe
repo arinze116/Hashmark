@@ -1,0 +1,24 @@
+/// One observed digest compared with its expected value.
+pub struct DigestCheck { expected: u256, observed: u256 }
+
+impl DigestCheck {
+    /// Construct a conformance result without hiding either value.
+    pub fn new(_ expected: u256, _ observed: u256) -> Self {
+        Self { expected, observed }
+    }
+
+    /// Return the reference digest supplied by the caller.
+    pub fn expected(self) -> u256 {
+        self.expected
+    }
+
+    /// Return the digest produced by Fe.
+    pub fn observed(self) -> u256 {
+        self.observed
+    }
+
+    /// Return whether the Fe digest matches the reference value.
+    pub fn passes(self) -> bool {
+        self.observed == self.expected
+    }
+}

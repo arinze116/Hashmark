@@ -116,6 +116,11 @@ jobs:
           bash "${RUNNER_TEMP}/feup.sh" --version "${FE_VERSION}" --no-modify-path
           echo "${HOME}/.fe/bin" >> "${GITHUB_PATH}"
 
+      - name: Verify generated Fe sources
+        run: |
+          python scripts/generate_fe_vectors.py
+          git diff --exit-code -- src/generated_vectors.fe src/native_runner.fe
+
       - name: Generate evidence twice
         run: |
           python -m hashmark run --all --backend all --format all --output-dir reports/ci-first
