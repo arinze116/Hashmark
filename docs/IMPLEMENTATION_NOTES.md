@@ -33,6 +33,15 @@ Status labels in this document are factual confidence labels, not test outcomes.
 - **Verified:** as of 16 November 2026, GitHub lists Fe `v26.6.0` (published 10 November 2026, commit `5b3f96a...`) as the newest stable release. No newer stable release is available to recommend.
 - **Verified:** the official Fe guide still states that Fe is not production-ready because of known bugs, a limited standard library, and sometimes sub-optimal bytecode. The official contest separately allows Fe 26.5.0 or later, native or EVM projects, and working prototypes with documented limitations.
 
+## Fe-core evidence engine — 21 November 2026
+
+- **Verified:** v1.1.0 moves evaluation and evidence rendering into Fe. `scripts/generate_fe_vectors.py` now also generates `src/engine.fe` from the fixtures; the hand-written `src/evidence_render.fe` formats the engine's `HASHMARK/FE-EVIDENCE/1` JSON and Markdown documents. The native program exposes `--evidence-json` and `--evidence-markdown`, each optionally followed by `--algorithm` or `--vector`.
+- **Verified:** the amd64 Fe 26.6.0 compiler under the isolated QEMU setup builds the rewritten program; `--evidence-json` reports 32/32 vectors and 6/6 streaming checks passing, the strict Python validator accepts the real Fe output, selector modes return the correct subsets with `complete_catalogue: false`, and the pre-existing `HASHMARK/1` and `--self-test` modes are unchanged.
+- **Verified:** GitHub Actions run `44898673751` passes all four jobs at commit `6dd33ada6ca6eaa0bec10f87b289b46ac21c1b7d`, including the generated-source drift check over `src/engine.fe` and byte-identical `fe-evidence.json`/`fe-report.md` across two integration runs.
+- **Verified:** Fe 26.6.0 string literals longer than roughly 32 bytes are `DynString(N)`, not `String<N>`; passing a long literal (for example a 33+ character check name) into a `String<N>` parameter is a type error. The renderer therefore prints the six fixed streaming-check names from an index dispatch instead of receiving them as parameters.
+- **Verified:** in this isolated QEMU-user setup the guest's first user argument is consumed as the program-name slot (an x86-64 `echo alpha beta gamma` prints only `beta gamma`). The emulation wrapper therefore passes the program name explicitly as the first argument; on native x86-64 the standard argv layout applies and no placeholder is needed.
+- **Verified:** Python suite is 128 tests, all passing locally under CPython 3.15.2; the Fe evidence parser rejects tampered digests, fingerprints, summaries, streaming order, and catalogue-scope mismatches.
+
 ## Intentional structure decisions
 
 - The Fe project follows the official ingot convention under `src/`, rather than introducing a nested `fe/` project. This keeps `fe check`, `fe test`, and `fe build` aligned with the official starter.

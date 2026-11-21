@@ -2,6 +2,14 @@
 
 All notable project changes are documented here.
 
+## 1.1.0 — 2026-11-21
+
+- Moved evidence evaluation into Fe: a generated engine (`src/engine.fe`) evaluates every vector with the typed `DigestCheck` API and runs the six streaming conformance checks inside the native Fe program.
+- Added a hand-written Fe evidence renderer (`src/evidence_render.fe`) and two native program modes, `--evidence-json` and `--evidence-markdown`, emitting a deterministic `HASHMARK/FE-EVIDENCE/1` JSON document and a Markdown report directly from Fe.
+- Added a strict Python validator (`hashmark/fe_evidence.py`) that checks the Fe evidence document field-by-field against the committed fixtures; the native runner cross-checks it against the `HASHMARK/1` protocol stream and fails closed on any disagreement.
+- Report bundles now include `fe-evidence.json` and `fe-report.md` alongside the existing artefacts, and CI byte-compares them across two runs.
+- Python test suite grows from 109 to 128 tests, including Fe evidence parser, tamper, and cross-stream disagreement cases.
+
 ## Unreleased — final compliance audit
 
 - Added a typed Fe `DigestCheck` conformance result and reusable streaming suite.

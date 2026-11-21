@@ -11,7 +11,7 @@ Hashmark independently checks Fe 26.6.0's built-in SHA-256 and Ethereum Keccak-2
 | ![GNOME Terminal showing Hashmark passing 64 of 64 backend-vector checks, two of two target suites and 32 of 32 differential comparisons](docs/assets/hashmark-terminal-summary.png) | ![Hashmark offline report showing PASS, 64 executed results, native and EVM target suites, and 32 differential comparisons](docs/assets/hashmark-report-overview.png) |
 | Actual terminal capture from the passing integration job. | Actual self-contained HTML report downloaded from the same CI run. |
 
-**Status:** Fe 26.6.0 · SHA-256 + Ethereum Keccak-256 · native + EVM · Python 3.15.2 oracle · [v1.0.0 release CI passing](https://github.com/arinze116/Hashmark/actions/runs/43757276440) · MIT
+**Status:** Fe 26.6.0 · SHA-256 + Ethereum Keccak-256 · native + EVM · Python 3.15.2 oracle · v1.1.0: Fe emits its own evidence · [v1.0.0 release CI passing](https://github.com/arinze116/Hashmark/actions/runs/43757276440) · MIT
 
 **Run:** `python -m hashmark run --all --backend all --format all --output-dir reports/local`
 
@@ -26,10 +26,11 @@ Hashmark provides a Fe-first conformance workflow:
 - thin adapters over `core::hash`; no cryptographic primitive is reimplemented;
 - 32 committed vectors covering known answers, boundaries, and 1 KiB/64 KiB messages;
 - ten shared Fe suites on Sonatina/EVM and native backends;
+- a generated Fe engine that evaluates the whole catalogue inside the native program and emits its own evidence as `HASHMARK/FE-EVIDENCE/1` JSON and Markdown;
 - independent `hashlib.sha256` and PyCryptodome Keccak-256 oracles;
 - a strict `HASHMARK/1` native result protocol;
 - deterministic JSON, Markdown, and self-contained HTML evidence;
-- fail-closed fixture, protocol, subprocess, and report validation.
+- fail-closed fixture, protocol, Fe evidence, subprocess, and report validation.
 
 Hashmark is informal conformance testing. It is not NIST CAVP validation, a security audit, certification, or exhaustive proof.
 
@@ -63,6 +64,8 @@ Published v1.0.0 evidence, verified by the pinned x86-64 workflow:
 
 The final-audit branch additionally passes 109 Python tests at 92% line coverage, ten Sonatina/EVM Fe suites, native IR compilation on AArch64 Linux, and an x86-64 native executable run under isolated QEMU with 32/32 vectors plus the shared streaming self-test. These audit-branch results are local evidence until that commit is pushed and CI runs.
 
+The v1.1.0 Fe-core rewrite passes 128 Python tests and the same Fe suites; its native program emits the Fe evidence documents that CI byte-compares across two runs, and the strict Python validator accepts the real Fe output while rejecting tampered digests, fingerprints, summaries, and streaming order.
+
 The x86-64 GitHub Actions job is authoritative because Fe 26.6.0 does not execute native tests on ARM64 Linux. A skipped or unavailable target is never counted as passing.
 
 ## Evidence screenshots
@@ -86,15 +89,19 @@ flowchart LR
     F --> E[Sonatina / EVM test suites]
     F --> N[Native Fe tests + runner]
     N --> R[HASHMARK/1 parser]
+    F --> G[Generated Fe evidence engine]
+    G --> D[Fe-emitted JSON + Markdown evidence]
+    D --> X[Strict Fe evidence validator]
     O --> C[Evidence comparison]
     E --> C
     R --> C
+    X --> C
     C --> J[Canonical JSON]
     J --> M[Markdown]
     J --> H[Offline HTML]
 ```
 
-The Python layer orchestrates and reports; it does not replace Fe as the implementation under test. The same Fe adapter and vector constants feed both compiler backends. EVM evidence records aggregate suite status because the Fe EVM runner does not expose per-vector return digests. Native evidence carries each actual Fe digest.
+The Python layer orchestrates and reports; it does not replace Fe as the implementation under test. Since v1.1.0 the native Fe program is also the evidence engine: it evaluates every vector and streaming check itself and emits the `HASHMARK/FE-EVIDENCE/1` document, which Python validates fail-closed against the fixtures and cross-checks against the `HASHMARK/1` stream. The same Fe adapter and vector constants feed both compiler backends. EVM evidence records aggregate suite status because the Fe EVM runner does not expose per-vector return digests. Native evidence carries each actual Fe digest.
 
 Read [Architecture](docs/ARCHITECTURE.md) and [ADR 0001](docs/adr/0001-language-and-architecture.md) for the complete rationale.
 
@@ -109,6 +116,8 @@ let observed = check.observed()
 ```
 
 The same API supports one-shot, fixed-chunk, and explicit-empty-update checks. `conformance::streaming_suite()` covers uneven partitions and every two-part split through 140 bytes. The generated native runner consumes the same `generated_vectors` constants as the Fe tests, so expected digests are not duplicated in a second generated source.
+
+The native program's evidence modes are pure Fe: a generated engine (`src/engine.fe`, produced from the fixtures by `scripts/generate_fe_vectors.py`) runs every `DigestCheck` and the six streaming conformance checks, and a hand-written renderer (`src/evidence_render.fe`) formats the results. `./hashmark --evidence-json` prints the complete evidence document; `--evidence-markdown` prints the same evidence as Markdown; both accept `--algorithm` or `--vector` selectors. The document is deterministic: fixed key order, no timestamps, no host data.
 
 `fe test --backend sonatina` and `fe test --backend native` compile the same source rather than maintaining target-specific vector suites. The native executable also exposes `--self-test` as a direct target-neutral streaming check for constrained or cross-emulated environments.
 
@@ -130,9 +139,10 @@ PyCryptodome's `Crypto.Hash.keccak.new(digest_bits=256)` is the independent Kecc
 2. Compute the oracle digest from the fixture bytes, never from Fe output.
 3. Run the requested Fe backend.
 4. Parse native records with exact field, identifier, digest, uniqueness, and summary checks.
-5. Compare fixture, Fe, and oracle values.
-6. Validate the report invariants before writing it atomically.
-7. Write stable, sorted artefacts without timestamps, host paths, randomness, or elapsed time.
+5. Validate the Fe-emitted evidence document field-by-field against the fixtures and cross-check it against the native protocol records; any disagreement fails the run.
+6. Compare fixture, Fe, and oracle values.
+7. Validate the report invariants before writing it atomically.
+8. Write stable, sorted artefacts without timestamps, host paths, randomness, or elapsed time.
 
 SHA-256 canonical vectors are traced to NIST CAVP material. Keccak vectors were reproduced against XKCP commit `d20c8fcaecc543f816a0721d0dfc13b4cf27c14d`. Deterministic boundary inputs use `byte[i] = (i * 131 + 17) mod 256`. See [Cryptography and provenance](docs/CRYPTOGRAPHY.md) and [Vector format](docs/VECTOR_FORMAT.md).
 
@@ -206,7 +216,7 @@ python -m coverage run -m unittest discover -s tests -v
 python -m coverage report
 python -m hashmark validate-vectors
 python scripts/generate_fe_vectors.py
-git diff --exit-code -- src/generated_vectors.fe src/native_runner.fe
+git diff --exit-code -- src/generated_vectors.fe src/native_runner.fe src/engine.fe
 ```
 
 The pinned GitHub Actions workflow runs separate Fe, Python, integration, and dependency-consistency jobs. Integration generates the full report twice, compares every artefact byte-for-byte, validates report invariants, and uploads the evidence directory.
@@ -224,7 +234,7 @@ For a compiler-only build on any release platform, run `fe build --backend nativ
 
 ## Contest and AI-assistance disclosure
 
-Hashmark was built for the [Fe Builders Challenge](https://fe-lang.org/contest/) during the official build window. Repository history begins on 15 November 2026 and contains no pre-contest source; the entrant must still confirm that there is no undisclosed off-repository starting work. An autonomous OpenAI coding agent assisted with research, implementation, tests, documentation, and reproducibility work under the project owner's direction. The responsible human entrant must review, understand, and be able to explain the code, architecture, evidence model, and limitations.
+Hashmark was built for the [Fe Builders Challenge](https://fe-lang.org/contest/) during the official build window. Repository history begins on 15 November 2026 and contains no pre-contest source; the entrant must still confirm that there is no undisclosed off-repository starting work. An autonomous OpenAI coding agent assisted with research, implementation, tests, documentation, and reproducibility work under the project owner's direction. The v1.1.0 Fe-core evidence engine was implemented by Muse (Meta) under the project owner's direction. The responsible human entrant must review, understand, and be able to explain the code, architecture, evidence model, and limitations.
 
 Hashmark copies no cryptographic implementation. It calls Fe `core::hash`, Python `hashlib`, and PyCryptodome; generated boundary inputs are Hashmark code, while NIST and XKCP materials are attributed reference data. Research references and exact source decisions are recorded in [Implementation notes](docs/IMPLEMENTATION_NOTES.md).
 
