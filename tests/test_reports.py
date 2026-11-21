@@ -226,6 +226,28 @@ class ReportTests(unittest.TestCase):
             write_report_bundle(report, output, ("json", "markdown", "html"), native_protocol=protocol)
             self.assertEqual(prepare_output_directory(output, force=True), output.resolve())
 
+    def test_bundle_includes_fe_evidence_and_allows_force(self) -> None:
+        report = self._report(self._result())
+        fe_evidence = (
+            b'{\n  "project": "Hashmark",\n  "protocol": "HASHMARK/FE-EVIDENCE/1"\n}\n'
+        )
+        fe_markdown = "# Hashmark Fe evidence — native\n".encode("utf-8")
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            paths = write_report_bundle(
+                report,
+                output,
+                ("json", "markdown", "html"),
+                fe_evidence=fe_evidence,
+                fe_report_markdown=fe_markdown,
+            )
+            names = {path.name for path in paths}
+            self.assertIn("fe-evidence.json", names)
+            self.assertIn("fe-report.md", names)
+            self.assertEqual((output / "fe-evidence.json").read_bytes(), fe_evidence)
+            self.assertEqual((output / "fe-report.md").read_bytes(), fe_markdown)
+            self.assertEqual(prepare_output_directory(output, force=True), output.resolve())
+
     def test_inconsistent_derived_summaries_are_rejected(self) -> None:
         report = self._report(self._result())
         report["summary"]["target_suites"]["passed"] = 0

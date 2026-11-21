@@ -69,6 +69,8 @@ class BackendOutcome:
     results: tuple[EvidenceResult, ...]
     exit_code: int
     native_protocol: bytes | None = None
+    fe_evidence_bytes: bytes | None = None
+    fe_report_markdown: bytes | None = None
 
 
 def require_python_toolchain() -> None:
@@ -101,6 +103,8 @@ def _report_paths(
     report: dict[str, object],
     native_protocol: bytes | None,
     project_root: Path,
+    fe_evidence_bytes: bytes | None = None,
+    fe_report_markdown: bytes | None = None,
 ) -> tuple[Path, ...]:
     if arguments.format == "terminal":
         if arguments.output is not None or arguments.output_dir is not None:
@@ -122,6 +126,8 @@ def _report_paths(
         formats,
         force=arguments.force,
         native_protocol=native_protocol,
+        fe_evidence=fe_evidence_bytes,
+        fe_report_markdown=fe_report_markdown,
     )
 
 
@@ -203,7 +209,7 @@ def _run_native_backend(
         internal = run_native(
             fe_binary,
             project_root,
-            {item.id for item in selection.fixtures},
+            selection.fixtures,
             timeout_seconds,
             selection.native_arguments,
         )
@@ -218,7 +224,14 @@ def _run_native_backend(
     target = target_evidence(internal.target, project_root, fe_binary)
     results = tuple(native_results(selection.fixtures, oracle_digests, internal.protocol.records))
     has_failure = target.status != "PASS" or any(item.status == "FAIL" for item in results)
-    return BackendOutcome(target, results, EXIT_CONFORMANCE if has_failure else 0, internal.raw_stdout)
+    return BackendOutcome(
+        target,
+        results,
+        EXIT_CONFORMANCE if has_failure else 0,
+        internal.raw_stdout,
+        internal.fe_evidence_bytes,
+        internal.fe_report_markdown,
+    )
 
 
 def execute_run(arguments: argparse.Namespace, project_root: Path) -> int:
@@ -234,6 +247,8 @@ def execute_run(arguments: argparse.Namespace, project_root: Path) -> int:
     results: list[EvidenceResult] = []
     targets: list[TargetEvidence] = []
     native_protocol: bytes | None = None
+    fe_evidence_bytes: bytes | None = None
+    fe_report_markdown: bytes | None = None
     exit_code = 0
 
     try:
@@ -255,6 +270,8 @@ def execute_run(arguments: argparse.Namespace, project_root: Path) -> int:
             targets.append(outcome.target)
             results.extend(outcome.results)
             native_protocol = outcome.native_protocol
+            fe_evidence_bytes = outcome.fe_evidence_bytes
+            fe_report_markdown = outcome.fe_report_markdown
             exit_code = max(exit_code, outcome.exit_code)
 
     report = build_report(
@@ -269,6 +286,6 @@ def execute_run(arguments: argparse.Namespace, project_root: Path) -> int:
             "selector": selection.label,
         },
     )
-    paths = _report_paths(arguments, report, native_protocol, project_root)
+    paths = _report_paths(arguments, report, native_protocol, project_root, fe_evidence_bytes, fe_report_markdown)
     _print_summary(report, monotonic() - started, paths)
     return exit_code if exit_code else (0 if report["summary"]["status"] == "PASS" else EXIT_CONFORMANCE)

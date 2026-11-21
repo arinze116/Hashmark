@@ -12,7 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import monotonic
 
-from hashmark.protocol import ProtocolRun, parse_protocol
+from hashmark.fe_evidence import FeEvidenceDocument, FeEvidenceError, parse_fe_evidence
+from hashmark.fixtures import Fixture
+from hashmark.protocol import ProtocolError, ProtocolRun, parse_protocol
 from hashmark.version import FE_VERSION
 
 FE_VERSION_PATTERN = re.compile(r"^fe (?P<version>\d+\.\d+\.\d+) \([0-9a-f]+\)$")
@@ -69,6 +71,9 @@ class NativeRun:
     protocol: ProtocolRun
     target: TargetRun
     raw_stdout: bytes
+    fe_evidence: FeEvidenceDocument | None = None
+    fe_evidence_bytes: bytes | None = None
+    fe_report_markdown: bytes | None = None
 
 
 def discover_fe(explicit: str | None = None) -> Path:
@@ -163,10 +168,32 @@ def native_supported_locally() -> bool:
     )
 
 
+def _require_evidence_agreement(document: FeEvidenceDocument, protocol: ProtocolRun) -> None:
+    """Require the Fe evidence document and the HASHMARK/1 stream to agree."""
+
+    records = {record.vector_id: record for record in protocol.records}
+    if len(records) != len(document.results):
+        raise ProtocolError("Fe evidence and native protocol result counts differ")
+    for result in document.results:
+        record = records.get(result.vector_id)
+        if record is None:
+            raise ProtocolError(f"Fe evidence result is missing from the native protocol: {result.vector_id}")
+        if record.digest_hex != result.fe_digest or record.input_length_bytes != result.input_length_bytes:
+            raise ProtocolError(f"Fe evidence and native protocol disagree for {result.vector_id}")
+        if (record.status == "pass") != (result.status == "PASS"):
+            raise ProtocolError(f"Fe evidence and native protocol statuses disagree for {result.vector_id}")
+
+
+def _evidence_arguments(mode: str, selector: tuple[str, ...]) -> list[str]:
+    if selector == ("--all",):
+        return [mode]
+    return [mode, *selector]
+
+
 def run_native(
     fe_binary: Path,
     project_root: Path,
-    known_ids: set[str],
+    fixtures: tuple[Fixture, ...],
     timeout_seconds: int,
     selector: tuple[str, ...] = ("--all",),
 ) -> NativeRun:
@@ -201,10 +228,38 @@ def run_native(
         raise RunnerProcessError(f"native runner was not produced at {executable}")
     runner_command = [str(executable), *selector]
     runner_result = run_command(runner_command, timeout_seconds, project_root)
-    protocol = parse_protocol(runner_result.stdout, known_ids)
+    protocol = parse_protocol(runner_result.stdout, {item.id for item in fixtures})
     if runner_result.returncode not in {0, 1}:
         raise RunnerProcessError(_bounded_diagnostic(runner_result.stderr) or "native runner crashed")
-    status = "PASS" if runner_result.returncode == 0 and protocol.summary.failed == 0 else "FAIL"
+
+    evidence_command = [str(executable), *_evidence_arguments("--evidence-json", selector)]
+    evidence_result = run_command(evidence_command, timeout_seconds, project_root)
+    if evidence_result.returncode not in {0, 1}:
+        raise RunnerProcessError(_bounded_diagnostic(evidence_result.stderr) or "Fe evidence run crashed")
+    try:
+        document = parse_fe_evidence(
+            evidence_result.stdout, fixtures, complete_catalogue=selector == ("--all",),
+        )
+    except FeEvidenceError as error:
+        raise ProtocolError(str(error)) from error
+    _require_evidence_agreement(document, protocol)
+    if (evidence_result.returncode == 0) != (document.summary.status == "PASS"):
+        raise RunnerProcessError("Fe evidence exit code disagrees with its summary")
+
+    markdown_command = [str(executable), *_evidence_arguments("--evidence-markdown", selector)]
+    markdown_result = run_command(markdown_command, timeout_seconds, project_root)
+    if markdown_result.returncode != evidence_result.returncode:
+        raise RunnerProcessError("Fe evidence Markdown run disagrees with the JSON run")
+    if not markdown_result.stdout.startswith(b"# Hashmark Fe evidence"):
+        raise RunnerProcessError("Fe evidence Markdown output is malformed")
+
+    status = (
+        "PASS"
+        if runner_result.returncode == 0
+        and protocol.summary.failed == 0
+        and document.summary.status == "PASS"
+        else "FAIL"
+    )
     return NativeRun(
         protocol=protocol,
         target=TargetRun(
@@ -215,4 +270,7 @@ def run_native(
             diagnostic=_bounded_diagnostic(runner_result.stderr),
         ),
         raw_stdout=runner_result.stdout,
+        fe_evidence=document,
+        fe_evidence_bytes=evidence_result.stdout,
+        fe_report_markdown=markdown_result.stdout,
     )

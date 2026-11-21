@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hashmark-fe"
-version = "1.0.0"
+version = "1.1.0"
 description = "Reproducible cryptographic evidence for Fe"
 readme = "README.md"
 requires-python = "==3.15.2"

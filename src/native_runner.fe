@@ -5,7 +5,7 @@ use std::env::Args
 use std::io::{Stderr, Stdout}
 
 use super::digest_check::DigestCheck
-use super::{conformance, deterministic_input, generated_vectors, keccak256, sha256}
+use super::{conformance, deterministic_input, engine, generated_vectors, keccak256, sha256}
 
 fn emit<const I: usize, const A: usize>(
     _ vector_id: String<I>,
@@ -37,9 +37,18 @@ pub fn run() -> i32 uses (args: Args, out: mut Stdout, err: mut Stderr) {
     let select_algorithm = argument_count == 3 && args.get(1) == "--algorithm"
     let select_vector = argument_count == 3 && args.get(1) == "--vector"
     let select_self_test = argument_count == 2 && args.get(1) == "--self-test"
-    if !(select_all || select_algorithm || select_vector || select_self_test) {
+    let select_evidence_json = (argument_count == 2 || argument_count == 4)
+        && args.get(1) == "--evidence-json"
+        && (argument_count == 2 || args.get(2) == "--algorithm" || args.get(2) == "--vector")
+    let select_evidence_markdown = (argument_count == 2 || argument_count == 4)
+        && args.get(1) == "--evidence-markdown"
+        && (argument_count == 2 || args.get(2) == "--algorithm" || args.get(2) == "--vector")
+    let evidence_mode = select_evidence_json || select_evidence_markdown
+    let ev_select_algorithm = evidence_mode && argument_count == 4 && args.get(2) == "--algorithm"
+    let ev_select_vector = evidence_mode && argument_count == 4 && args.get(2) == "--vector"
+    if !(select_all || select_algorithm || select_vector || select_self_test || evidence_mode) {
         eprintln!(
-            "usage: hashmark [--all | --algorithm sha256|keccak256 | --vector id | --self-test]",
+            "usage: hashmark [--all | --algorithm sha256|keccak256 | --vector id | --self-test | --evidence-json [--algorithm a | --vector id] | --evidence-markdown [--algorithm a | --vector id]]",
         )
         return 2
     }
@@ -55,106 +64,422 @@ pub fn run() -> i32 uses (args: Args, out: mut Stdout, err: mut Stderr) {
         eprintln!("unsupported algorithm")
         return 2
     }
+    if ev_select_algorithm && !(args.get(3) == "sha256" || args.get(3) == "keccak256") {
+        eprintln!("unsupported algorithm")
+        return 2
+    }
     var known_vector = false
     if select_vector && args.get(2) == "keccak256-abc" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "keccak256-abc" {
         known_vector = true
     }
     if select_vector && args.get(2) == "keccak256-boundary-1" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "keccak256-boundary-1" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "keccak256-boundary-135" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "keccak256-boundary-135" {
         known_vector = true
     }
     if select_vector && args.get(2) == "keccak256-boundary-136" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "keccak256-boundary-136" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "keccak256-boundary-137" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "keccak256-boundary-137" {
         known_vector = true
     }
     if select_vector && args.get(2) == "keccak256-boundary-2" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "keccak256-boundary-2" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "keccak256-boundary-271" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "keccak256-boundary-271" {
         known_vector = true
     }
     if select_vector && args.get(2) == "keccak256-boundary-272" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "keccak256-boundary-272" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "keccak256-boundary-273" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "keccak256-boundary-273" {
         known_vector = true
     }
     if select_vector && args.get(2) == "keccak256-boundary-3" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "keccak256-boundary-3" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "keccak256-empty" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "keccak256-empty" {
         known_vector = true
     }
     if select_vector && args.get(2) == "keccak256-long-1k" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "keccak256-long-1k" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "keccak256-long-64k" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "keccak256-long-64k" {
         known_vector = true
     }
     if select_vector && args.get(2) == "sha256-abc" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "sha256-abc" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "sha256-boundary-1" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "sha256-boundary-1" {
         known_vector = true
     }
     if select_vector && args.get(2) == "sha256-boundary-119" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "sha256-boundary-119" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "sha256-boundary-120" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "sha256-boundary-120" {
         known_vector = true
     }
     if select_vector && args.get(2) == "sha256-boundary-127" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "sha256-boundary-127" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "sha256-boundary-128" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "sha256-boundary-128" {
         known_vector = true
     }
     if select_vector && args.get(2) == "sha256-boundary-129" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "sha256-boundary-129" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "sha256-boundary-2" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "sha256-boundary-2" {
         known_vector = true
     }
     if select_vector && args.get(2) == "sha256-boundary-3" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "sha256-boundary-3" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "sha256-boundary-55" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "sha256-boundary-55" {
         known_vector = true
     }
     if select_vector && args.get(2) == "sha256-boundary-56" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "sha256-boundary-56" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "sha256-boundary-57" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "sha256-boundary-57" {
         known_vector = true
     }
     if select_vector && args.get(2) == "sha256-boundary-63" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "sha256-boundary-63" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "sha256-boundary-64" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "sha256-boundary-64" {
         known_vector = true
     }
     if select_vector && args.get(2) == "sha256-boundary-65" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "sha256-boundary-65" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "sha256-empty" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "sha256-empty" {
         known_vector = true
     }
     if select_vector && args.get(2) == "sha256-long-1k" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "sha256-long-1k" {
+        known_vector = true
+    }
     if select_vector && args.get(2) == "sha256-long-64k" {
+        known_vector = true
+    }
+    if ev_select_vector && args.get(3) == "sha256-long-64k" {
         known_vector = true
     }
     if select_vector && args.get(2) == "sha256-nist-short-d3" {
         known_vector = true
     }
+    if ev_select_vector && args.get(3) == "sha256-nist-short-d3" {
+        known_vector = true
+    }
     if select_vector && !known_vector {
         eprintln!("unknown vector id")
         return 2
+    }
+    if ev_select_vector && !known_vector {
+        eprintln!("unknown vector id")
+        return 2
+    }
+    if select_evidence_json {
+        if ev_select_vector {
+            var vector_index: i32 = -1
+            if args.get(3) == "keccak256-abc" {
+                vector_index = 0
+            }
+            if args.get(3) == "keccak256-boundary-1" {
+                vector_index = 1
+            }
+            if args.get(3) == "keccak256-boundary-135" {
+                vector_index = 2
+            }
+            if args.get(3) == "keccak256-boundary-136" {
+                vector_index = 3
+            }
+            if args.get(3) == "keccak256-boundary-137" {
+                vector_index = 4
+            }
+            if args.get(3) == "keccak256-boundary-2" {
+                vector_index = 5
+            }
+            if args.get(3) == "keccak256-boundary-271" {
+                vector_index = 6
+            }
+            if args.get(3) == "keccak256-boundary-272" {
+                vector_index = 7
+            }
+            if args.get(3) == "keccak256-boundary-273" {
+                vector_index = 8
+            }
+            if args.get(3) == "keccak256-boundary-3" {
+                vector_index = 9
+            }
+            if args.get(3) == "keccak256-empty" {
+                vector_index = 10
+            }
+            if args.get(3) == "keccak256-long-1k" {
+                vector_index = 11
+            }
+            if args.get(3) == "keccak256-long-64k" {
+                vector_index = 12
+            }
+            if args.get(3) == "sha256-abc" {
+                vector_index = 13
+            }
+            if args.get(3) == "sha256-boundary-1" {
+                vector_index = 14
+            }
+            if args.get(3) == "sha256-boundary-119" {
+                vector_index = 15
+            }
+            if args.get(3) == "sha256-boundary-120" {
+                vector_index = 16
+            }
+            if args.get(3) == "sha256-boundary-127" {
+                vector_index = 17
+            }
+            if args.get(3) == "sha256-boundary-128" {
+                vector_index = 18
+            }
+            if args.get(3) == "sha256-boundary-129" {
+                vector_index = 19
+            }
+            if args.get(3) == "sha256-boundary-2" {
+                vector_index = 20
+            }
+            if args.get(3) == "sha256-boundary-3" {
+                vector_index = 21
+            }
+            if args.get(3) == "sha256-boundary-55" {
+                vector_index = 22
+            }
+            if args.get(3) == "sha256-boundary-56" {
+                vector_index = 23
+            }
+            if args.get(3) == "sha256-boundary-57" {
+                vector_index = 24
+            }
+            if args.get(3) == "sha256-boundary-63" {
+                vector_index = 25
+            }
+            if args.get(3) == "sha256-boundary-64" {
+                vector_index = 26
+            }
+            if args.get(3) == "sha256-boundary-65" {
+                vector_index = 27
+            }
+            if args.get(3) == "sha256-empty" {
+                vector_index = 28
+            }
+            if args.get(3) == "sha256-long-1k" {
+                vector_index = 29
+            }
+            if args.get(3) == "sha256-long-64k" {
+                vector_index = 30
+            }
+            if args.get(3) == "sha256-nist-short-d3" {
+                vector_index = 31
+            }
+            return engine::run_evidence_json(false, false, false, vector_index)
+        }
+        if ev_select_algorithm {
+            return engine::run_evidence_json(false, true, args.get(3) == "sha256", -1)
+        }
+        return engine::run_evidence_json(true, false, false, -1)
+    }
+    if select_evidence_markdown {
+        if ev_select_vector {
+            var vector_index: i32 = -1
+            if args.get(3) == "keccak256-abc" {
+                vector_index = 0
+            }
+            if args.get(3) == "keccak256-boundary-1" {
+                vector_index = 1
+            }
+            if args.get(3) == "keccak256-boundary-135" {
+                vector_index = 2
+            }
+            if args.get(3) == "keccak256-boundary-136" {
+                vector_index = 3
+            }
+            if args.get(3) == "keccak256-boundary-137" {
+                vector_index = 4
+            }
+            if args.get(3) == "keccak256-boundary-2" {
+                vector_index = 5
+            }
+            if args.get(3) == "keccak256-boundary-271" {
+                vector_index = 6
+            }
+            if args.get(3) == "keccak256-boundary-272" {
+                vector_index = 7
+            }
+            if args.get(3) == "keccak256-boundary-273" {
+                vector_index = 8
+            }
+            if args.get(3) == "keccak256-boundary-3" {
+                vector_index = 9
+            }
+            if args.get(3) == "keccak256-empty" {
+                vector_index = 10
+            }
+            if args.get(3) == "keccak256-long-1k" {
+                vector_index = 11
+            }
+            if args.get(3) == "keccak256-long-64k" {
+                vector_index = 12
+            }
+            if args.get(3) == "sha256-abc" {
+                vector_index = 13
+            }
+            if args.get(3) == "sha256-boundary-1" {
+                vector_index = 14
+            }
+            if args.get(3) == "sha256-boundary-119" {
+                vector_index = 15
+            }
+            if args.get(3) == "sha256-boundary-120" {
+                vector_index = 16
+            }
+            if args.get(3) == "sha256-boundary-127" {
+                vector_index = 17
+            }
+            if args.get(3) == "sha256-boundary-128" {
+                vector_index = 18
+            }
+            if args.get(3) == "sha256-boundary-129" {
+                vector_index = 19
+            }
+            if args.get(3) == "sha256-boundary-2" {
+                vector_index = 20
+            }
+            if args.get(3) == "sha256-boundary-3" {
+                vector_index = 21
+            }
+            if args.get(3) == "sha256-boundary-55" {
+                vector_index = 22
+            }
+            if args.get(3) == "sha256-boundary-56" {
+                vector_index = 23
+            }
+            if args.get(3) == "sha256-boundary-57" {
+                vector_index = 24
+            }
+            if args.get(3) == "sha256-boundary-63" {
+                vector_index = 25
+            }
+            if args.get(3) == "sha256-boundary-64" {
+                vector_index = 26
+            }
+            if args.get(3) == "sha256-boundary-65" {
+                vector_index = 27
+            }
+            if args.get(3) == "sha256-empty" {
+                vector_index = 28
+            }
+            if args.get(3) == "sha256-long-1k" {
+                vector_index = 29
+            }
+            if args.get(3) == "sha256-long-64k" {
+                vector_index = 30
+            }
+            if args.get(3) == "sha256-nist-short-d3" {
+                vector_index = 31
+            }
+            return engine::run_evidence_markdown(false, false, false, vector_index)
+        }
+        if ev_select_algorithm {
+            return engine::run_evidence_markdown(false, true, args.get(3) == "sha256", -1)
+        }
+        return engine::run_evidence_markdown(true, false, false, -1)
     }
     var total: usize = 0
     var passed: usize = 0

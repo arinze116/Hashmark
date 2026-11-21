@@ -17,7 +17,15 @@ from hashmark.schema import validate_report_data
 from hashmark.version import PROJECT_NAME, REPORT_SCHEMA_VERSION, __version__
 
 REPORT_FILENAMES = frozenset(
-    {"hashmark-report.json", "hashmark-report.md", "index.html", "hashmark-report.sha256", "native-protocol.log"},
+    {
+        "fe-evidence.json",
+        "fe-report.md",
+        "hashmark-report.json",
+        "hashmark-report.md",
+        "index.html",
+        "hashmark-report.sha256",
+        "native-protocol.log",
+    },
 )
 SOURCE_PATTERNS = (
     ".github/workflows/**/*.yml",
@@ -264,6 +272,22 @@ def _is_generated_report_file(path: Path) -> bool:
         except (OSError, ValueError):
             return False
         return True
+    if path.name == "fe-evidence.json":
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            return False
+        return (
+            isinstance(value, dict)
+            and value.get("protocol") == "HASHMARK/FE-EVIDENCE/1"
+            and value.get("project") == PROJECT_NAME
+        )
+    if path.name == "fe-report.md":
+        try:
+            prefix = path.read_text(encoding="utf-8")[:256]
+        except (OSError, UnicodeError):
+            return False
+        return prefix.startswith("# Hashmark Fe evidence")
     return False
 
 
@@ -274,6 +298,8 @@ def write_report_bundle(
     *,
     force: bool = False,
     native_protocol: bytes | None = None,
+    fe_evidence: bytes | None = None,
+    fe_report_markdown: bytes | None = None,
 ) -> tuple[Path, ...]:
     """Write selected report formats and return their paths."""
 
@@ -291,6 +317,10 @@ def write_report_bundle(
         payloads["index.html"] = render_html(report).encode("utf-8")
     if native_protocol is not None:
         payloads["native-protocol.log"] = native_protocol
+    if fe_evidence is not None:
+        payloads["fe-evidence.json"] = fe_evidence
+    if fe_report_markdown is not None:
+        payloads["fe-report.md"] = fe_report_markdown
     if not payloads:
         return ()
     paths: list[Path] = []

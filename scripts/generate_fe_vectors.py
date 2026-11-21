@@ -61,7 +61,7 @@ def generate_runner(fixtures: list[Fixture]) -> str:
         "use std::io::{Stderr, Stdout}",
         "",
         "use super::digest_check::DigestCheck",
-        "use super::{conformance, deterministic_input, generated_vectors, keccak256, sha256}",
+        "use super::{conformance, deterministic_input, engine, generated_vectors, keccak256, sha256}",
         "",
         "fn emit<const I: usize, const A: usize>(",
         "    _ vector_id: String<I>,",
@@ -84,8 +84,13 @@ def generate_runner(fixtures: list[Fixture]) -> str:
         "    let select_algorithm = argument_count == 3 && args.get(1) == \"--algorithm\"",
         "    let select_vector = argument_count == 3 && args.get(1) == \"--vector\"",
         "    let select_self_test = argument_count == 2 && args.get(1) == \"--self-test\"",
-        "    if !(select_all || select_algorithm || select_vector || select_self_test) {",
-        "        eprintln!(\"usage: hashmark [--all | --algorithm sha256|keccak256 | --vector id | --self-test]\")",
+        "    let select_evidence_json = (argument_count == 2 || argument_count == 4) && args.get(1) == \"--evidence-json\" && (argument_count == 2 || args.get(2) == \"--algorithm\" || args.get(2) == \"--vector\")",
+        "    let select_evidence_markdown = (argument_count == 2 || argument_count == 4) && args.get(1) == \"--evidence-markdown\" && (argument_count == 2 || args.get(2) == \"--algorithm\" || args.get(2) == \"--vector\")",
+        "    let evidence_mode = select_evidence_json || select_evidence_markdown",
+        "    let ev_select_algorithm = evidence_mode && argument_count == 4 && args.get(2) == \"--algorithm\"",
+        "    let ev_select_vector = evidence_mode && argument_count == 4 && args.get(2) == \"--vector\"",
+        "    if !(select_all || select_algorithm || select_vector || select_self_test || evidence_mode) {",
+        "        eprintln!(\"usage: hashmark [--all | --algorithm sha256|keccak256 | --vector id | --self-test | --evidence-json [--algorithm a | --vector id] | --evidence-markdown [--algorithm a | --vector id]]\")",
         "        return 2",
         "    }",
         "    if select_self_test {",
@@ -97,16 +102,30 @@ def generate_runner(fixtures: list[Fixture]) -> str:
         "        eprintln!(\"unsupported algorithm\")",
         "        return 2",
         "    }",
+        "    if ev_select_algorithm && !(args.get(3) == \"sha256\" || args.get(3) == \"keccak256\") {",
+        "        eprintln!(\"unsupported algorithm\")",
+        "        return 2",
+        "    }",
         "    var known_vector = false",
     ]
     for item in fixtures:
         lines.append(f"    if select_vector && args.get(2) == \"{item.id}\" {{ known_vector = true }}")
+        lines.append(f"    if ev_select_vector && args.get(3) == \"{item.id}\" {{ known_vector = true }}")
     lines.extend(
         [
             "    if select_vector && !known_vector {",
             "        eprintln!(\"unknown vector id\")",
             "        return 2",
             "    }",
+            "    if ev_select_vector && !known_vector {",
+            "        eprintln!(\"unknown vector id\")",
+            "        return 2",
+            "    }",
+        ],
+    )
+    lines.extend(_evidence_dispatch(fixtures))
+    lines.extend(
+        [
             "    var total: usize = 0",
             "    var passed: usize = 0",
         ],
@@ -138,6 +157,129 @@ def generate_runner(fixtures: list[Fixture]) -> str:
     return "\n".join(lines)
 
 
+def _evidence_dispatch(fixtures: list[Fixture]) -> list[str]:
+    lines: list[str] = []
+    for fmt in ("json", "markdown"):
+        lines.extend(
+            [
+                f"    if select_evidence_{fmt} {{",
+                "        if ev_select_vector {",
+                "            var vector_index: i32 = -1",
+            ],
+        )
+        for index, item in enumerate(fixtures):
+            lines.append(f"            if args.get(3) == \"{item.id}\" {{ vector_index = {index} }}")
+        lines.extend(
+            [
+                f"            return engine::run_evidence_{fmt}(false, false, false, vector_index)",
+                "        }",
+                "        if ev_select_algorithm {",
+                f"            return engine::run_evidence_{fmt}(false, true, args.get(3) == \"sha256\", -1)",
+                "        }",
+                f"        return engine::run_evidence_{fmt}(true, false, false, -1)",
+                "    }",
+            ],
+        )
+    return lines
+
+
+def _selection_condition(item: Fixture, index: int) -> str:
+    algorithm_term = "algorithm_is_sha256" if item.algorithm == "sha256" else "!algorithm_is_sha256"
+    return (
+        f"select_all || (select_algorithm && {algorithm_term})"
+        f" || vector_index == {index}"
+    )
+
+
+def _streaming_calls() -> list[tuple[str, str]]:
+    return [
+        ("sha256_streaming_matches_one_shot", "conformance::sha256_streaming_matches_one_shot()"),
+        ("keccak256_streaming_matches_one_shot", "conformance::keccak256_streaming_matches_one_shot()"),
+        ("sha256_uneven_partition_matches_one_shot", "conformance::sha256_uneven_partition_matches_one_shot()"),
+        ("keccak256_uneven_partition_matches_one_shot", "conformance::keccak256_uneven_partition_matches_one_shot()"),
+        ("sha256_two_part_splits_match_one_shot", "conformance::sha256_two_part_splits_match_one_shot()"),
+        ("keccak256_two_part_splits_match_one_shot", "conformance::keccak256_two_part_splits_match_one_shot()"),
+    ]
+
+
+def generate_engine(fixtures: list[Fixture]) -> str:
+    """Generate the Fe evidence engine: full catalogue evaluation in Fe."""
+
+    lines = [
+        "// Generated by scripts/generate_fe_vectors.py. Do not edit manually.",
+        "",
+        "#![cfg(target = \"native\")]",
+        "",
+        "use std::io::Stdout",
+        "",
+        "use super::{conformance, deterministic_input, evidence_render, generated_vectors, keccak256, sha256}",
+        "",
+    ]
+    formats = (
+        ("json", "evidence_render::json_header(select_all)", "evidence_render::json_streaming_open()", "evidence_render::json_summary(total, passed, streaming_passed)"),
+        ("markdown", "evidence_render::markdown_header(select_all)", "evidence_render::markdown_streaming_open()", "evidence_render::markdown_summary(total, passed, streaming_passed)"),
+    )
+    for fmt, header_call, streaming_open, summary_call in formats:
+        lines.extend(
+            [
+                f"pub fn run_evidence_{fmt}(",
+                "    _ select_all: bool,",
+                "    _ select_algorithm: bool,",
+                "    _ algorithm_is_sha256: bool,",
+                "    _ vector_index: i32,",
+                ") -> i32 uses (out: mut Stdout) {",
+                "    var selected_count: usize = 0",
+            ],
+        )
+        for index, item in enumerate(fixtures):
+            lines.append(f"    if {_selection_condition(item, index)} {{ selected_count += 1 }}")
+        lines.extend(
+            [
+                "    var total: usize = 0",
+                "    var passed: usize = 0",
+                "    var emitted: usize = 0",
+                f"    {header_call}",
+            ],
+        )
+        for index, item in enumerate(fixtures):
+            check_call = "sha256::check" if item.algorithm == "sha256" else "keccak256::check"
+            constant = _constant_name(item.id)
+            input_expression = _input_expression(item)
+            check = f"{check_call}({input_expression}, generated_vectors::{constant})"
+            lines.append(f"    if {_selection_condition(item, index)} {{")
+            lines.append("        total += 1")
+            lines.append("        emitted += 1")
+            if fmt == "json":
+                lines.append(
+                    f"        if evidence_render::json_vector(\"{item.id}\", \"{item.algorithm}\", \"{item.category}\", {item.input_length_bytes}, sha256::digest_word({input_expression}), {check}, emitted == selected_count) {{ passed += 1 }}",
+                )
+            else:
+                lines.append(
+                    f"        if evidence_render::markdown_vector(\"{item.id}\", \"{item.algorithm}\", \"{item.category}\", {item.input_length_bytes}, {check}) {{ passed += 1 }}",
+                )
+            lines.append("    }")
+        lines.append("    var streaming_passed: usize = 0")
+        for index, (name, call) in enumerate(_streaming_calls()):
+            lines.append(f"    let s{index} = {call}")
+            lines.append(f"    if s{index} {{ streaming_passed += 1 }}")
+        lines.append(f"    {streaming_open}")
+        for index, (name, _call) in enumerate(_streaming_calls()):
+            if fmt == "json":
+                last = "true" if index == len(_streaming_calls()) - 1 else "false"
+                lines.append(f"    evidence_render::json_streaming_check({index}, s{index}, {last})")
+            else:
+                lines.append(f"    evidence_render::markdown_streaming_check({index}, s{index})")
+        lines.extend(
+            [
+                f"    {summary_call}",
+                "    if passed == total && streaming_passed == 6 { 0 } else { 1 }",
+                "}",
+                "",
+            ],
+        )
+    return "\n".join(lines)
+
+
 def _format_generated_sources(project_root: Path) -> None:
     fe_binary = os.environ.get("HASHMARK_FE_BIN", DEFAULT_FE_BINARY)
     try:
@@ -158,6 +300,9 @@ def main() -> int:
     )
     (project_root / "src/native_runner.fe").write_text(
         generate_runner(fixtures), encoding="utf-8", newline="\n",
+    )
+    (project_root / "src/engine.fe").write_text(
+        generate_engine(fixtures), encoding="utf-8", newline="\n",
     )
     _format_generated_sources(project_root)
     print(f"generated Fe data for {len(fixtures)} vectors")
